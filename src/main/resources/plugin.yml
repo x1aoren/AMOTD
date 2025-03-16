@@ -1,6 +1,22 @@
 name: AMOTD
 version: '1.0'
 main: cn.mcobs.AMOTD
-api-version: 1.13
-authors: [xiaoren]
-description: 一个简单的MOTD自定义插件 
+api-version: '1.13'
+authors:
+  - xiaoren
+description: 一个简单的MOTD自定义插件
+
+commands:
+  amotd:
+    description: AMOTD 插件命令
+    usage: /amotd reload
+    permission: amotd.command
+    permission-message: 你没有权限执行这个命令！
+
+permissions:
+  amotd.command:
+    description: 允许使用 AMOTD 基本命令
+    default: true
+  amotd.command.reload:
+    description: 允许重载插件配置
+    default: op 
