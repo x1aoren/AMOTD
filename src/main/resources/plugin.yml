@@ -1,0 +1,6 @@
+name: AMOTD
+version: '1.0'
+main: cn.mcobs.AMOTD
+api-version: 1.13
+authors: [xiaoren]
+description: 一个简单的MOTD自定义插件 

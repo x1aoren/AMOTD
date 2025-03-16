@@ -1,0 +1,26 @@
+# Maven 构建目录
+target/
+
+# 编译文件
+*.class
+*.jar
+
+# IDE文件
+.idea/
+*.iml
+.settings/
+.classpath
+.project
+.vscode/
+bin/
+
+# 日志文件
+*.log
+
+# 操作系统生成的文件
+.DS_Store
+Thumbs.db
+
+# 备份文件
+*~
+*.bak 
