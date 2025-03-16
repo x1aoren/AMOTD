@@ -13,9 +13,12 @@ import java.util.List;
 public class AMOTDCommand implements CommandExecutor, TabCompleter {
     
     private final AMOTD plugin;
+    private final MOTDListener motdListener;
     
     public AMOTDCommand(AMOTD plugin) {
         this.plugin = plugin;
+        // 获取主类中的监听器实例
+        this.motdListener = plugin.getMotdListener();
     }
     
     @Override
@@ -28,12 +31,15 @@ public class AMOTDCommand implements CommandExecutor, TabCompleter {
             
             // 重载配置
             plugin.reloadConfig();
-            sender.sendMessage(ChatColor.GREEN + "AMOTD 配置已重新加载！");
+            // 重载图标
+            motdListener.reloadServerIcons();
+            
+            sender.sendMessage(ChatColor.GREEN + "AMOTD 配置和图标已重新加载！");
             return true;
         }
         
         // 如果没有参数或参数不是reload，显示使用方法
-        sender.sendMessage(ChatColor.YELLOW + "用法: /amotd reload - 重新加载配置");
+        sender.sendMessage(ChatColor.YELLOW + "用法: /amotd reload - 重新加载配置和图标");
         return true;
     }
     
