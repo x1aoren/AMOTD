@@ -14,16 +14,25 @@ public class AMOTDCommand implements CommandExecutor, TabCompleter {
     
     private final AMOTD plugin;
     private final MOTDListener motdListener;
+    private final MOTDStyleFetcher styleFetcher;
     
     public AMOTDCommand(AMOTD plugin) {
         this.plugin = plugin;
-        // 获取主类中的监听器实例
         this.motdListener = plugin.getMotdListener();
+        this.styleFetcher = new MOTDStyleFetcher(plugin);
     }
     
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (args.length > 0 && args[0].equalsIgnoreCase("reload")) {
+        if (args.length == 0) {
+            // 显示帮助信息
+            sender.sendMessage(ChatColor.YELLOW + "AMOTD 插件命令:");
+            sender.sendMessage(ChatColor.YELLOW + "/amotd reload - 重新加载配置和图标");
+            sender.sendMessage(ChatColor.YELLOW + "/amotd get <样式码> - 获取预设MOTD样式");
+            return true;
+        }
+        
+        if (args[0].equalsIgnoreCase("reload")) {
             if (!sender.hasPermission("amotd.command.reload")) {
                 sender.sendMessage(ChatColor.RED + "你没有权限执行这个命令！");
                 return true;
@@ -38,8 +47,52 @@ public class AMOTDCommand implements CommandExecutor, TabCompleter {
             return true;
         }
         
-        // 如果没有参数或参数不是reload，显示使用方法
-        sender.sendMessage(ChatColor.YELLOW + "用法: /amotd reload - 重新加载配置和图标");
+        if (args[0].equalsIgnoreCase("get")) {
+            if (!sender.hasPermission("amotd.command.get")) {
+                sender.sendMessage(ChatColor.RED + "你没有权限执行这个命令！");
+                return true;
+            }
+            
+            if (args.length < 2) {
+                sender.sendMessage(ChatColor.RED + "用法: /amotd get <样式码>");
+                return true;
+            }
+            
+            // 获取样式码
+            String styleCode = args[1];
+            sender.sendMessage(ChatColor.YELLOW + "正在获取MOTD样式，请稍候...");
+            
+            // 获取样式
+            styleFetcher.fetchStyle(styleCode, new MOTDStyleFetcher.Callback() {
+                @Override
+                public void onSuccess(String line1, String line2, boolean iconSuccess) {
+                    sender.sendMessage(ChatColor.GREEN + "MOTD样式获取成功！");
+                    sender.sendMessage(ChatColor.GREEN + "第一行: " + ChatColor.RESET + 
+                            ChatColor.translateAlternateColorCodes('&', line1));
+                    sender.sendMessage(ChatColor.GREEN + "第二行: " + ChatColor.RESET + 
+                            ChatColor.translateAlternateColorCodes('&', line2));
+                    
+                    if (iconSuccess) {
+                        sender.sendMessage(ChatColor.GREEN + "服务器图标已成功下载");
+                    } else {
+                        sender.sendMessage(ChatColor.YELLOW + "服务器图标下载失败或未提供");
+                    }
+                    
+                    // 重载MOTD监听器以应用新图标
+                    motdListener.reloadServerIcons();
+                }
+                
+                @Override
+                public void onFailure(String errorMessage) {
+                    sender.sendMessage(ChatColor.RED + "获取MOTD样式失败: " + errorMessage);
+                }
+            });
+            
+            return true;
+        }
+        
+        // 未知命令，显示帮助
+        sender.sendMessage(ChatColor.YELLOW + "用法: /amotd reload|get <样式码>");
         return true;
     }
     
@@ -47,19 +100,18 @@ public class AMOTDCommand implements CommandExecutor, TabCompleter {
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         List<String> completions = new ArrayList<>();
         
-        // 只有当输入第一个参数时才提供补全
+        // 第一个参数的补全选项
         if (args.length == 1) {
-            // 只有拥有reload权限的玩家才能看到reload补全选项
-            if (sender.hasPermission("amotd.command.reload")) {
-                // 如果玩家输入的开头匹配"reload"，则添加"reload"作为补全选项
-                if ("reload".startsWith(args[0].toLowerCase())) {
-                    completions.add("reload");
-                }
+            if (sender.hasPermission("amotd.command.reload") && "reload".startsWith(args[0].toLowerCase())) {
+                completions.add("reload");
+            }
+            if (sender.hasPermission("amotd.command.get") && "get".startsWith(args[0].toLowerCase())) {
+                completions.add("get");
             }
             return completions;
         }
         
-        // 对于其他情况，返回空列表（不提供补全选项）
+        // 其他情况不提供补全选项
         return completions;
     }
 } 
