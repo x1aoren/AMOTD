@@ -10,6 +10,9 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import java.util.logging.Level;
 
@@ -59,10 +62,14 @@ public class MOTDStyleFetcher {
                 
                 // 解析JSON
                 JSONObject jsonObject = new JSONObject(response.toString());
+                
+                // 直接从主对象获取字段，而不是从content子对象获取
                 String iconUrl = jsonObject.getString("icon");
-                JSONObject content = jsonObject.getJSONObject("content");
-                String line1 = content.getString("line1");
-                String line2 = content.getString("line2");
+                String line1 = jsonObject.getString("line1");
+                String line2 = jsonObject.getString("line2");
+                
+                // 获取格式类型，默认为minecraft
+                String formatType = jsonObject.optString("type", "minecraft");
                 
                 // 下载图标
                 boolean iconSuccess = false;
@@ -70,14 +77,15 @@ public class MOTDStyleFetcher {
                     iconSuccess = downloadIcon(iconUrl);
                 }
                 
-                // 更新配置
-                boolean configSuccess = updateConfig(line1, line2);
+                // 根据格式类型更新配置
+                boolean configSuccess = updateConfig(line1, line2, formatType);
                 
                 // 返回结果
                 final boolean finalIconSuccess = iconSuccess;
+                final String finalFormatType = formatType;
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     if (configSuccess) {
-                        callback.onSuccess(line1, line2, finalIconSuccess);
+                        callback.onSuccess(line1, line2, finalIconSuccess, finalFormatType);
                     } else {
                         callback.onFailure("配置更新失败");
                     }
@@ -133,26 +141,135 @@ public class MOTDStyleFetcher {
      * 更新配置文件
      * @param line1 第一行MOTD
      * @param line2 第二行MOTD
+     * @param formatType 格式类型 (minecraft 或 minimessage)
      * @return 是否成功
      */
-    private boolean updateConfig(String line1, String line2) {
+    private boolean updateConfig(String line1, String line2, String formatType) {
         try {
-            FileConfiguration config = plugin.getConfig();
-            config.set("line1", line1);
-            config.set("line2", line2);
-            plugin.saveConfig();
+            // 获取配置文件
+            File configFile = new File(plugin.getDataFolder(), "config.yml");
+            
+            // 读取当前配置文件的所有行
+            List<String> lines = Files.readAllLines(configFile.toPath(), StandardCharsets.UTF_8);
+            List<String> newLines = new ArrayList<>();
+            
+            boolean inLegacySection = false;
+            boolean inMinimessageSection = false;
+            boolean updatedLegacy1 = false;
+            boolean updatedLegacy2 = false;
+            boolean updatedMini1 = false;
+            boolean updatedMini2 = false;
+            boolean updatedFormat = false;
+            
+            // 处理每一行
+            for (String line : lines) {
+                // 检测所在节
+                if (line.trim().startsWith("legacy:")) {
+                    inLegacySection = true;
+                    inMinimessageSection = false;
+                } else if (line.trim().startsWith("minimessage:")) {
+                    inLegacySection = false;
+                    inMinimessageSection = true;
+                } else if (line.trim().startsWith("message_format:")) {
+                    // 更新消息格式类型
+                    newLines.add("message_format: \"" + formatType + "\"");
+                    updatedFormat = true;
+                    continue;
+                }
+                
+                // 更新对应部分
+                if (inLegacySection && line.trim().startsWith("line1:") && "minecraft".equals(formatType)) {
+                    newLines.add("  line1: \"" + escapeYaml(line1) + "\"");
+                    updatedLegacy1 = true;
+                    continue;
+                } else if (inLegacySection && line.trim().startsWith("line2:") && "minecraft".equals(formatType)) {
+                    newLines.add("  line2: \"" + escapeYaml(line2) + "\"");
+                    updatedLegacy2 = true;
+                    continue;
+                } else if (inMinimessageSection && line.trim().startsWith("line1:") && "minimessage".equals(formatType)) {
+                    newLines.add("  line1: \"" + escapeYaml(line1) + "\"");
+                    updatedMini1 = true;
+                    continue;
+                } else if (inMinimessageSection && line.trim().startsWith("line2:") && "minimessage".equals(formatType)) {
+                    newLines.add("  line2: \"" + escapeYaml(line2) + "\"");
+                    updatedMini2 = true;
+                    continue;
+                }
+                
+                // 保留原行
+                newLines.add(line);
+            }
+            
+            // 如果没有找到对应的行，添加到合适的位置
+            if ("minecraft".equals(formatType) && (!updatedLegacy1 || !updatedLegacy2)) {
+                int legacyIndex = findIndexStartingWith(newLines, "legacy:");
+                if (legacyIndex >= 0) {
+                    if (!updatedLegacy1) {
+                        newLines.add(legacyIndex + 1, "  line1: \"" + escapeYaml(line1) + "\"");
+                    }
+                    if (!updatedLegacy2) {
+                        newLines.add(legacyIndex + 2, "  line2: \"" + escapeYaml(line2) + "\"");
+                    }
+                }
+            }
+            
+            if ("minimessage".equals(formatType) && (!updatedMini1 || !updatedMini2)) {
+                int miniIndex = findIndexStartingWith(newLines, "minimessage:");
+                if (miniIndex >= 0) {
+                    if (!updatedMini1) {
+                        newLines.add(miniIndex + 1, "  line1: \"" + escapeYaml(line1) + "\"");
+                    }
+                    if (!updatedMini2) {
+                        newLines.add(miniIndex + 2, "  line2: \"" + escapeYaml(line2) + "\"");
+                    }
+                }
+            }
+            
+            if (!updatedFormat) {
+                newLines.add("message_format: \"" + formatType + "\"");
+            }
+            
+            // 写回配置文件
+            Files.write(configFile.toPath(), newLines, StandardCharsets.UTF_8);
+            
+            // 重新加载配置
+            plugin.reloadConfig();
+            
             return true;
         } catch (Exception e) {
-            plugin.getLogger().log(Level.SEVERE, "更新配置文件时出错", e);
+            plugin.getLogger().severe("更新配置文件时出错: " + e.getMessage());
             return false;
         }
+    }
+    
+    /**
+     * 在列表中查找以指定前缀开头的行的索引
+     */
+    private int findIndexStartingWith(List<String> lines, String prefix) {
+        for (int i = 0; i < lines.size(); i++) {
+            if (lines.get(i).trim().startsWith(prefix)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+    
+    /**
+     * 转义YAML特殊字符
+     */
+    private String escapeYaml(String str) {
+        return str.replace("\\", "\\\\")
+                  .replace("\"", "\\\"")
+                  .replace("\n", "\\n")
+                  .replace("\r", "\\r")
+                  .replace("\t", "\\t");
     }
     
     /**
      * 回调接口
      */
     public interface Callback {
-        void onSuccess(String line1, String line2, boolean iconSuccess);
+        void onSuccess(String line1, String line2, boolean iconSuccess, String formatType);
         void onFailure(String errorMessage);
     }
 } 

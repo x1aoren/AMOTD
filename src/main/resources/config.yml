@@ -2,11 +2,23 @@
 # 支持颜色代码，使用 & 符号
 # 例如: &a - 亮绿色, &b - 青色, &c - 红色, 等等
 
-# MOTD 第一行
-line1: "&a欢迎来到 &b我的 &cMinecraft &d服务器！"
+# 消息格式类型: legacy 或 minimessage
+# legacy: 使用传统的 & 颜色代码
+# minimessage: 使用MiniMessage格式 (非Paper服务器将使用简易解析器)
+message_format: "legacy"
 
-# MOTD 第二行
-line2: "&e这是由 &6AMOTD &7插件 &8生成的消息"
+# 传统格式的MOTD (使用 & 颜色代码)
+legacy:
+  line1: "&a欢迎来到 &b我的 &cMinecraft &d服务器！"
+  line2: "&e这是由 &6AMOTD &7插件 &8生成的消息"
+
+# MiniMessage 格式的 MOTD
+minimessage:
+  line1: "<gradient:green:blue>欢迎来到我的Minecraft服务器！</gradient>"
+  line2: "<rainbow>这是由AMOTD插件生成的消息</rainbow>"
 
 # 是否启用服务器图标显示
-enable_server_icon: true 
+enable_server_icon: true
+
+# 是否启用调试模式
+debug: false 

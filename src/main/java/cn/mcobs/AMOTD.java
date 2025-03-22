@@ -1,6 +1,7 @@
 package cn.mcobs;
 
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.configuration.file.FileConfiguration;
 
 import java.io.File;
 

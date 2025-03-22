@@ -43,6 +43,27 @@ public class AMOTDCommand implements CommandExecutor, TabCompleter {
             // 重载图标
             motdListener.reloadServerIcons();
             
+            // 检查是否使用MiniMessage格式
+            String formatType = plugin.getConfig().getString("message_format", "legacy");
+            boolean useMinimessage = "minimessage".equalsIgnoreCase(formatType);
+            
+            if (useMinimessage) {
+                boolean isPaper = false;
+                try {
+                    Class.forName("io.papermc.paper.text.PaperComponents");
+                    isPaper = true;
+                } catch (ClassNotFoundException e) {
+                    // 不是Paper服务器
+                }
+                
+                if (!isPaper) {
+                    sender.sendMessage(ChatColor.YELLOW + "当前使用MiniMessage格式，但服务器不是Paper。" +
+                            "将使用简易MiniMessage解析器，部分高级功能可能不可用。");
+                } else {
+                    sender.sendMessage(ChatColor.GREEN + "检测到Paper服务器，完整MiniMessage格式可用。");
+                }
+            }
+            
             sender.sendMessage(ChatColor.GREEN + "AMOTD 配置和图标已重新加载！");
             return true;
         }
@@ -65,12 +86,17 @@ public class AMOTDCommand implements CommandExecutor, TabCompleter {
             // 获取样式
             styleFetcher.fetchStyle(styleCode, new MOTDStyleFetcher.Callback() {
                 @Override
-                public void onSuccess(String line1, String line2, boolean iconSuccess) {
+                public void onSuccess(String line1, String line2, boolean iconSuccess, String formatType) {
                     sender.sendMessage(ChatColor.GREEN + "MOTD样式获取成功！");
+                    sender.sendMessage(ChatColor.GREEN + "格式类型: " + ChatColor.YELLOW + formatType);
                     sender.sendMessage(ChatColor.GREEN + "第一行: " + ChatColor.RESET + 
-                            ChatColor.translateAlternateColorCodes('&', line1));
+                            (formatType.equalsIgnoreCase("minimessage") ? 
+                            SimpleMiniMessage.parseMiniMessage(line1) : 
+                            ChatColor.translateAlternateColorCodes('&', line1)));
                     sender.sendMessage(ChatColor.GREEN + "第二行: " + ChatColor.RESET + 
-                            ChatColor.translateAlternateColorCodes('&', line2));
+                            (formatType.equalsIgnoreCase("minimessage") ? 
+                            SimpleMiniMessage.parseMiniMessage(line2) : 
+                            ChatColor.translateAlternateColorCodes('&', line2)));
                     
                     if (iconSuccess) {
                         sender.sendMessage(ChatColor.GREEN + "服务器图标已成功下载");

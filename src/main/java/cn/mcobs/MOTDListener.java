@@ -29,13 +29,25 @@ public class MOTDListener implements Listener {
     
     @EventHandler
     public void onServerPing(ServerListPingEvent event) {
-        // 从配置文件中读取两行MOTD
-        String line1 = plugin.getConfig().getString("line1", "默认的第一行MOTD");
-        String line2 = plugin.getConfig().getString("line2", "默认的第二行MOTD");
+        // 获取消息格式类型
+        String formatType = plugin.getConfig().getString("message_format", "legacy");
+        boolean useMinimessage = "minimessage".equalsIgnoreCase(formatType);
         
-        // 转换颜色代码
-        line1 = ChatColor.translateAlternateColorCodes('&', line1);
-        line2 = ChatColor.translateAlternateColorCodes('&', line2);
+        String line1, line2;
+        
+        if (useMinimessage) {
+            // 从minimessage部分获取配置
+            line1 = plugin.getConfig().getString("minimessage.line1", "<green>默认的第一行MOTD</green>");
+            line2 = plugin.getConfig().getString("minimessage.line2", "<yellow>默认的第二行MOTD</yellow>");
+        } else {
+            // 从legacy部分获取配置
+            line1 = plugin.getConfig().getString("legacy.line1", "&a默认的第一行MOTD");
+            line2 = plugin.getConfig().getString("legacy.line2", "&e默认的第二行MOTD");
+        }
+        
+        // 格式化消息
+        line1 = MessageFormatter.formatMessage(plugin, line1, useMinimessage);
+        line2 = MessageFormatter.formatMessage(plugin, line2, useMinimessage);
         
         // 设置MOTD
         event.setMotd(line1 + "\n" + line2);
