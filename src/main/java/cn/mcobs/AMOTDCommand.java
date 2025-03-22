@@ -6,6 +6,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -32,10 +33,17 @@ public class AMOTDCommand implements CommandExecutor, TabCompleter {
             return true;
         }
         
-        if (args[0].equalsIgnoreCase("reload")) {
+        if (args.length > 0 && args[0].equalsIgnoreCase("reload")) {
             if (!sender.hasPermission("amotd.command.reload")) {
                 sender.sendMessage(ChatColor.RED + "你没有权限执行这个命令！");
                 return true;
+            }
+            
+            // 检查配置文件是否存在
+            File configFile = new File(plugin.getDataFolder(), "config.yml");
+            if (!configFile.exists()) {
+                sender.sendMessage(ChatColor.YELLOW + "未找到配置文件，正在重新生成默认配置...");
+                plugin.saveDefaultConfig();
             }
             
             // 重载配置
