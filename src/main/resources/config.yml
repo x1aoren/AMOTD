@@ -1,10 +1,17 @@
 # AMOTD 插件配置文件
-# 支持颜色代码，使用 & 符号
-# 例如: &a - 亮绿色, &b - 青色, &c - 红色, 等等
+
+# ==============================
+# 版本兼容性说明
+# ==============================
+# 传统格式 (legacy): 所有Minecraft服务器都支持
+# MiniMessage格式: 需要Paper 1.16.5+服务器
+# 渐变色支持: 需要Paper 1.16.5+服务器
+# RGB颜色支持: 需要Paper 1.16.5+服务器
+# ==============================
 
 # 消息格式类型: legacy 或 minimessage
 # legacy: 使用传统的 & 颜色代码
-# minimessage: 使用MiniMessage格式 (非Paper服务器将使用简易解析器)
+# minimessage: 使用MiniMessage格式 (需要Paper 1.16.5+服务器)
 message_format: "legacy"
 
 # 传统格式的MOTD (使用 & 颜色代码)
@@ -12,10 +19,19 @@ legacy:
   line1: "&a欢迎来到 &b我的 &cMinecraft &d服务器！"
   line2: "&e这是由 &6AMOTD &7插件 &8生成的消息"
 
-# MiniMessage 格式的 MOTD
+# MiniMessage 格式的 MOTD (需要Paper 1.16.5+服务器)
+#
+# 推荐在线编辑器：https://motd.mcobs.cn/
+# 使用后可以生成样式码然后/amotd get <样式码>即可应用
+#
+# 支持的标签示例:
+# <color:red>红色文字</color>
+# <gradient:#FF0000:#0000FF>红蓝渐变</gradient>
+# <rainbow>彩虹文字</rainbow>
+# <bold>粗体</bold>, <italic>斜体</italic>, <underlined>下划线</underlined>
 minimessage:
-  line1: "<gradient:green:blue>欢迎来到我的Minecraft服务器！</gradient>"
-  line2: "<rainbow>这是由AMOTD插件生成的消息</rainbow>"
+  line1: "<gradient:#FF5555:#55FF55>欢迎来到我的Minecraft服务器！</gradient>"
+  line2: "<gradient:#5555FF:#FF55FF>这是由AMOTD插件生成的消息</gradient>"
 
 # 是否启用服务器图标显示
 enable_server_icon: true
