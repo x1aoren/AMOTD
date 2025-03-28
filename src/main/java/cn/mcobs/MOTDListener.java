@@ -54,6 +54,12 @@ public class MOTDListener implements Listener {
         // 设置MOTD
         event.setMotd(line1 + "\n" + line2);
         
+        // 添加人数修改功能
+        if (plugin.getConfig().getBoolean("player_count.enabled", false)) {
+            int maxPlayers = plugin.getConfig().getInt("player_count.max_players", 100);
+            event.setMaxPlayers(maxPlayers);
+        }
+        
         // 处理服务器图标
         if (plugin.getConfig().getBoolean("enable_server_icon", true) && !serverIcons.isEmpty()) {
             try {

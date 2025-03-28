@@ -37,4 +37,13 @@ minimessage:
 enable_server_icon: true
 
 # 是否启用调试模式
-debug: false 
+debug: false
+
+# 人数显示设置
+player_count:
+  # 是否启用人数修改功能
+  enabled: false
+  # 显示的最大人数
+  max_players: 100
+  # 是否应用这个最大人数限制 (true: 真实限制玩家数量, false: 仅显示修改后的人数)
+  apply_limit: false 

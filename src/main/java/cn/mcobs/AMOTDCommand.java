@@ -59,6 +59,9 @@ public class AMOTDCommand implements CommandExecutor, TabCompleter {
             // 重载图标
             motdListener.reloadServerIcons();
             
+            // 更新最大人数设置
+            plugin.updateMaxPlayers();
+            
             // 检查是否使用MiniMessage格式
             String formatType = plugin.getConfig().getString("message_format", "legacy");
             boolean useMinimessage = "minimessage".equalsIgnoreCase(formatType);

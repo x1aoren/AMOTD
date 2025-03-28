@@ -35,6 +35,14 @@ public final class AMOTD extends JavaPlugin {
         getCommand("amotd").setExecutor(commandExecutor);
         getCommand("amotd").setTabCompleter(commandExecutor);
         
+        // 如果启用了真实人数限制，应用最大人数设置
+        if (getConfig().getBoolean("player_count.enabled", false) && 
+            getConfig().getBoolean("player_count.apply_limit", false)) {
+            int maxPlayers = getConfig().getInt("player_count.max_players", 100);
+            getServer().setMaxPlayers(maxPlayers);
+            getLogger().info("已应用真实最大人数限制: " + maxPlayers);
+        }
+        
         // 检查和警告配置兼容性问题
         checkConfigCompatibility();
         
@@ -84,6 +92,16 @@ public final class AMOTD extends JavaPlugin {
                 getLogger().warning("警告: 当前配置使用MiniMessage格式，但服务器不是Paper。某些功能可能受到限制。");
                 getLogger().warning("建议对低版本服务器使用legacy格式，或升级到Paper服务器以获得全部功能。");
             }
+        }
+    }
+
+    // 添加更新最大人数的方法，供重载配置时使用
+    public void updateMaxPlayers() {
+        if (getConfig().getBoolean("player_count.enabled", false) && 
+            getConfig().getBoolean("player_count.apply_limit", false)) {
+            int maxPlayers = getConfig().getInt("player_count.max_players", 100);
+            getServer().setMaxPlayers(maxPlayers);
+            getLogger().info("已更新真实最大人数限制: " + maxPlayers);
         }
     }
 } 
