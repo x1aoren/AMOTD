@@ -92,6 +92,7 @@ public class AMOTDVelocity {
     
     // 修改图标重载方法
     public void reloadServerIcons() {
+        // 只重新加载图标，不重新保存配置
         if (motdListener != null) {
             motdListener.reloadServerIcons();
             logger.info("服务器图标已重新加载");

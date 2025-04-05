@@ -104,22 +104,30 @@ public class VelocityCommandHandler implements SimpleCommand {
                     
                     // 解析JSON响应
                     JSONObject json = new JSONObject(response.toString());
-                    String type = json.optString("type", "legacy");
+                    String type = json.optString("type", "minecraft");  // 默认为minecraft类型
                     String line1 = json.getString("line1");
                     String line2 = json.getString("line2");
                     String iconUrl = json.optString("icon", null);
                     
                     // 根据API返回的类型设置message_format
+                    // 注意: API返回的"minecraft"类型对应配置中的"legacy"格式
+                    String configType = "minecraft".equalsIgnoreCase(type) ? "legacy" : type;
+                    
                     try {
-                        plugin.getConfigManager().setString("message_format", type);
+                        // 设置消息格式类型
+                        plugin.getConfigManager().setString("message_format", configType);
                         
-                        // 根据类型设置对应的MOTD内容
-                        if ("minimessage".equalsIgnoreCase(type)) {
+                        // 只更新对应类型的MOTD内容
+                        if ("minimessage".equalsIgnoreCase(configType)) {
+                            // 如果是minimessage格式，只更新minimessage配置
                             plugin.getConfigManager().setString("minimessage.line1", line1);
                             plugin.getConfigManager().setString("minimessage.line2", line2);
+                            plugin.getLogger().info("已更新MiniMessage格式MOTD");
                         } else {
+                            // 否则更新legacy(minecraft)配置
                             plugin.getConfigManager().setString("legacy.line1", line1);
                             plugin.getConfigManager().setString("legacy.line2", line2);
+                            plugin.getLogger().info("已更新Legacy格式MOTD");
                         }
                     } catch (Exception e) {
                         plugin.getLogger().error("更新配置时出错", e);
@@ -148,7 +156,7 @@ public class VelocityCommandHandler implements SimpleCommand {
                             // 在主线程发送消息
                             plugin.getServer().getScheduler().buildTask(plugin, () -> {
                                 source.sendMessage(Component.text("获取到MOTD样式:").color(NamedTextColor.GREEN));
-                                source.sendMessage(Component.text("类型: " + type + " (已自动切换)").color(NamedTextColor.AQUA));
+                                source.sendMessage(Component.text("类型: " + configType + " (已自动切换)").color(NamedTextColor.AQUA));
                                 source.sendMessage(Component.text("第一行: " + line1).color(NamedTextColor.WHITE));
                                 source.sendMessage(Component.text("第二行: " + line2).color(NamedTextColor.WHITE));
                                 
@@ -164,7 +172,7 @@ public class VelocityCommandHandler implements SimpleCommand {
                             final String errorMsg = e.getMessage();
                             plugin.getServer().getScheduler().buildTask(plugin, () -> {
                                 source.sendMessage(Component.text("获取到MOTD样式:").color(NamedTextColor.GREEN));
-                                source.sendMessage(Component.text("类型: " + type).color(NamedTextColor.AQUA));
+                                source.sendMessage(Component.text("类型: " + configType).color(NamedTextColor.AQUA));
                                 source.sendMessage(Component.text("第一行: " + line1).color(NamedTextColor.WHITE));
                                 source.sendMessage(Component.text("第二行: " + line2).color(NamedTextColor.WHITE));
                                 source.sendMessage(Component.text("图标URL: " + iconUrl).color(NamedTextColor.GOLD));
