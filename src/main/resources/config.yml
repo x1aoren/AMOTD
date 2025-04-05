@@ -50,7 +50,7 @@ player_count:
 
 # 玩家列表悬停文本设置
 hover_player_list:
-  # 是否显示玩家列表悬停文本
+  # 是否显示玩家列表悬停文本（当鼠标悬停在服务器列表中的"xx/xx"玩家数上时）
   enabled: true
-  # 当没有玩家在线时显示的文本
+  # 当没有玩家在线时显示的文本（仅在Paper服务器上有效）
   empty_message: "目前没有玩家在线" 
