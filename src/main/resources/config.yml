@@ -46,4 +46,11 @@ player_count:
   # 显示的最大人数
   max_players: 100
   # 是否应用这个最大人数限制 (true: 真实限制玩家数量, false: 仅显示修改后的人数)
-  apply_limit: false 
+  apply_limit: false
+
+# 玩家列表悬停文本设置
+hover_player_list:
+  # 是否显示玩家列表悬停文本
+  enabled: true
+  # 当没有玩家在线时显示的文本
+  empty_message: "目前没有玩家在线" 

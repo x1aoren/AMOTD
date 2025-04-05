@@ -9,9 +9,12 @@ import org.bukkit.util.CachedServerIcon;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.UUID;
 
 public class MOTDListener implements Listener {
     
@@ -53,6 +56,15 @@ public class MOTDListener implements Listener {
         
         // 设置MOTD
         event.setMotd(line1 + "\n" + line2);
+        
+        // 处理玩家列表悬停文本
+        if (plugin.getConfig().getBoolean("hover_player_list.enabled", true)) {
+            // 保留原始玩家列表，以便在悬停时显示
+            // 不做任何修改，默认会显示所有在线玩家
+        } else {
+            // 使用已经定义好的辅助方法处理不同服务器的兼容性
+            setCustomPlayerSample(event, false);
+        }
         
         // 添加人数修改功能
         if (plugin.getConfig().getBoolean("player_count.enabled", false)) {
@@ -117,5 +129,61 @@ public class MOTDListener implements Listener {
      */
     public void reloadServerIcons() {
         loadServerIcons();
+    }
+    
+    /**
+     * 尝试使用扩展API设置自定义玩家列表悬停文本
+     * @param event Ping事件
+     * @param enabled 是否启用悬停文本
+     */
+    private void setCustomPlayerSample(ServerListPingEvent event, boolean enabled) {
+        if (!enabled) {
+            try {
+                // 尝试Paper API
+                Class<?> paperServerListPingEventClass = Class.forName("com.destroystokyo.paper.event.server.PaperServerListPingEvent");
+                if (paperServerListPingEventClass.isInstance(event)) {
+                    Method setHidePlayers = paperServerListPingEventClass.getMethod("setHidePlayers", boolean.class);
+                    setHidePlayers.invoke(event, true);
+                    return;
+                }
+                
+                // 尝试通过反射调用setPlayerSample方法
+                Method setPlayerSampleMethod = event.getClass().getMethod("setPlayerSample", List.class);
+                setPlayerSampleMethod.invoke(event, new ArrayList<>());
+            } catch (Exception ignored) {
+                // 不支持扩展API，使用基本Bukkit功能
+                plugin.getLogger().fine("此服务器不支持高级玩家列表自定义功能");
+            }
+        } else {
+            try {
+                // 检查是否有getOnlinePlayers方法
+                Method getOnlinePlayersMethod = event.getClass().getMethod("getOnlinePlayers");
+                List<?> players = (List<?>) getOnlinePlayersMethod.invoke(event);
+                
+                // 如果没有玩家在线并且支持自定义玩家列表
+                if (players.isEmpty()) {
+                    String emptyMessage = plugin.getConfig().getString("hover_player_list.empty_message", "目前没有玩家在线");
+                    
+                    // 尝试Paper API设置自定义文本
+                    try {
+                        // 创建一个虚拟的玩家配置文件
+                        Constructor<?> profileConstructor = Class.forName("com.mojang.authlib.GameProfile").getConstructor(UUID.class, String.class);
+                        Object profile = profileConstructor.newInstance(UUID.randomUUID(), emptyMessage);
+                        
+                        // 创建自定义玩家样本
+                        List<Object> playersList = new ArrayList<>();
+                        playersList.add(profile);
+                        
+                        // 通过反射设置
+                        Method setPlayerSample = event.getClass().getMethod("setPlayerSample", List.class);
+                        setPlayerSample.invoke(event, playersList);
+                    } catch (Exception e) {
+                        // 不支持，使用默认行为
+                    }
+                }
+            } catch (Exception ignored) {
+                // 此服务器不支持getOnlinePlayers方法
+            }
+        }
     }
 } 

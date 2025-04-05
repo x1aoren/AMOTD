@@ -1,79 +1,80 @@
 package cn.mcobs;
 
 import org.bukkit.command.CommandSender;
-import org.bukkit.ChatColor;
-
-import java.lang.reflect.Method;
-import java.lang.reflect.Field;
+import org.bukkit.entity.Player;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
 public class MessageUtil {
-    
-    private static final boolean HAS_ADVENTURE_API;
-    
-    static {
-        boolean hasApi = false;
-        try {
-            Class.forName("net.kyori.adventure.text.Component");
-            hasApi = true;
-        } catch (ClassNotFoundException e) {
-            hasApi = false;
-        }
-        HAS_ADVENTURE_API = hasApi;
-    }
-    
-    /**
-     * 发送消息，自动适配服务器版本
-     */
-    public static void sendMessage(CommandSender sender, String message, String colorCode) {
-        if (HAS_ADVENTURE_API) {
-            // 尝试使用Adventure API
-            try {
-                Class<?> componentClass = Class.forName("net.kyori.adventure.text.Component");
-                Method textMethod = componentClass.getMethod("text", String.class);
-                Object component = textMethod.invoke(null, message);
-                
-                // 添加颜色
-                if (colorCode != null) {
-                    Class<?> namedTextColorClass = Class.forName("net.kyori.adventure.text.format.NamedTextColor");
-                    Field colorField = namedTextColorClass.getField(colorCode.toUpperCase());
-                    Object color = colorField.get(null);
-                    
-                    Method colorMethod = component.getClass().getMethod("color", Class.forName("net.kyori.adventure.text.format.TextColor"));
-                    component = colorMethod.invoke(component, color);
-                }
-                
-                // 发送消息
-                Method sendMessageMethod = sender.getClass().getMethod("sendMessage", componentClass);
-                sendMessageMethod.invoke(sender, component);
-                return;
-            } catch (Exception e) {
-                // 如果反射调用失败，回退到传统方式
-            }
+
+    public static void sendMessage(CommandSender sender, String message, String colorName) {
+        if (message == null || message.isEmpty()) {
+            return;
         }
         
-        // 回退到传统的ChatColor
-        if (colorCode != null) {
-            ChatColor color = getChatColorByName(colorCode);
-            message = color + message;
-        }
-        sender.sendMessage(message);
-    }
-    
-    /**
-     * 根据名称获取ChatColor
-     */
-    private static ChatColor getChatColorByName(String name) {
         try {
-            return ChatColor.valueOf(name.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            return ChatColor.WHITE;
+            // 尝试使用Adventure API (Paper)
+            Component component;
+            
+            if (colorName != null) {
+                TextColor color = getColorByName(colorName);
+                component = Component.text(message).color(color);
+            } else {
+                component = LegacyComponentSerializer.legacySection().deserialize(message);
+            }
+            
+            if (sender instanceof Player) {
+                ((Player) sender).sendMessage(component);
+            } else {
+                // 对于控制台，转换为普通字符串
+                sender.sendMessage(LegacyComponentSerializer.legacySection().serialize(component));
+            }
+        } catch (Exception e) {
+            // 降级到旧的API或基本消息
+            if (colorName != null) {
+                String legacyColorCode = getLegacyColorCode(colorName);
+                sender.sendMessage(legacyColorCode + message);
+            } else {
+                sender.sendMessage(message);
+            }
         }
     }
     
-    /**
-     * 检查是否支持Adventure API
-     */
-    public static boolean hasAdventureApi() {
-        return HAS_ADVENTURE_API;
+    private static TextColor getColorByName(String colorName) {
+        try {
+            return NamedTextColor.NAMES.value(colorName.toLowerCase());
+        } catch (Exception e) {
+            return NamedTextColor.WHITE;
+        }
+    }
+    
+    private static String getLegacyColorCode(String colorName) {
+        switch (colorName.toLowerCase()) {
+            case "black": return "§0";
+            case "dark_blue": return "§1";
+            case "dark_green": return "§2";
+            case "dark_aqua": return "§3";
+            case "dark_red": return "§4";
+            case "dark_purple": return "§5";
+            case "gold": return "§6";
+            case "gray": return "§7";
+            case "dark_gray": return "§8";
+            case "blue": return "§9";
+            case "green": return "§a";
+            case "aqua": return "§b";
+            case "red": return "§c";
+            case "light_purple": return "§d";
+            case "yellow": return "§e";
+            case "white": return "§f";
+            default: return "§f";
+        }
+    }
+    
+    public static String translateColorCodes(String text) {
+        if (text == null) return "";
+        return LegacyComponentSerializer.legacyAmpersand().serialize(
+               LegacyComponentSerializer.legacyAmpersand().deserialize(text));
     }
 } 
