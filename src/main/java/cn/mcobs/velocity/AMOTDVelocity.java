@@ -47,6 +47,9 @@ public class AMOTDVelocity {
             }
         }
         
+        // 生成中文配置文件
+        saveChineseConfig();
+        
         // 创建icons文件夹
         Path iconsPath = dataDirectory.resolve("icons");
         if (!Files.exists(iconsPath)) {
@@ -72,6 +75,22 @@ public class AMOTDVelocity {
         );
         
         logger.info("AMOTD 插件已启用! (Velocity版本)");
+    }
+    
+    private void saveChineseConfig() {
+        Path chineseConfigPath = dataDirectory.resolve("config_zh.yml");
+        if (!Files.exists(chineseConfigPath)) {
+            try (InputStream in = getClass().getClassLoader().getResourceAsStream("config_zh.yml")) {
+                if (in != null) {
+                    Files.copy(in, chineseConfigPath);
+                    if (configManager != null && configManager.getBoolean("debug", false)) {
+                        logger.info("已生成中文配置文件 config_zh.yml");
+                    }
+                }
+            } catch (IOException e) {
+                logger.error("无法创建中文配置文件: " + e.getMessage());
+            }
+        }
     }
     
     public ProxyServer getServer() {

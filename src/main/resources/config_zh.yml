@@ -1,0 +1,59 @@
+# AMOTD 插件配置文件
+# 该配置文件为中文配置文件，使用方法为删除config.yml文件，将config_zh.yml重命名为config.yml
+
+
+
+# ==============================
+# 版本兼容性说明
+# ==============================
+# 传统格式 (legacy): 所有Minecraft服务器都支持
+# MiniMessage格式: 需要Paper 1.16.5+服务器
+# 渐变色支持: 需要Paper 1.16.5+服务器
+# RGB颜色支持: 需要Paper 1.16.5+服务器
+# ==============================
+
+# 消息格式类型: legacy 或 minimessage
+# legacy: 使用传统的 & 颜色代码
+# minimessage: 使用MiniMessage格式 (需要Paper 1.16.5+服务器)
+message_format: "legacy"
+
+# 传统格式的MOTD (使用 & 颜色代码)
+legacy:
+  line1: "&a欢迎来到 &b我的 &cMinecraft &d服务器！"
+  line2: "&e这是由 &6AMOTD &7插件 &8生成的消息"
+
+# MiniMessage 格式的 MOTD (需要Paper 1.16.5+服务器)
+#
+# 推荐在线编辑器：https://motd.mcobs.cn/
+# 使用后可以生成样式码然后/amotd get <样式码>即可应用
+#
+# 支持的标签示例:
+# <color:red>红色文字</color>
+# <gradient:#FF0000:#0000FF>红蓝渐变</gradient>
+# <rainbow>彩虹文字</rainbow>
+# <bold>粗体</bold>, <italic>斜体</italic>, <underlined>下划线</underlined>
+minimessage:
+  line1: "<gradient:#FF5555:#55FF55>欢迎来到我的Minecraft服务器！</gradient>"
+  line2: "<gradient:#5555FF:#FF55FF>这是由AMOTD插件生成的消息</gradient>"
+
+# 是否启用服务器图标显示
+enable_server_icon: true
+
+# 人数显示设置
+player_count:
+  # 是否启用人数修改功能
+  enabled: false
+  # 显示的最大人数
+  max_players: 100
+  # 是否应用这个最大人数限制 (true: 真实限制玩家数量, false: 仅显示修改后的人数)
+  apply_limit: false
+
+# 玩家列表悬停文本设置
+hover_player_list:
+  # 是否显示玩家列表悬停文本（当鼠标悬停在服务器列表中的"xx/xx"玩家数上时）
+  enabled: true
+  # 当没有玩家在线时显示的文本（仅在Paper服务器上有效）
+  empty_message: "目前没有玩家在线" 
+
+# 是否启用调试模式
+debug: false

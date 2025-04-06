@@ -16,6 +16,9 @@ public class AMOTD extends JavaPlugin {
         // 保存默认配置
         saveDefaultConfig();
         
+        // 生成中文配置文件
+        saveChineseConfig();
+        
         // 检查配置文件是否存在，如果不存在则重新生成
         File configFile = new File(getDataFolder(), "config.yml");
         if (!configFile.exists()) {
@@ -88,5 +91,15 @@ public class AMOTD extends JavaPlugin {
     // 添加getter方法
     public MOTDListener getMotdListener() {
         return motdListener;
+    }
+    
+    private void saveChineseConfig() {
+        File chineseConfigFile = new File(getDataFolder(), "config_zh.yml");
+        if (!chineseConfigFile.exists()) {
+            saveResource("config_zh.yml", false);
+            if (getConfig().getBoolean("debug", false)) {
+                getLogger().info("已生成中文配置文件 config_zh.yml");
+            }
+        }
     }
 } 
