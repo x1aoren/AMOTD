@@ -54,6 +54,14 @@ public class AMOTD extends JavaPlugin {
         getLogger().info("AMOTD 插件已禁用！");
     }
     
+    @Override
+    public void reloadConfig() {
+        super.reloadConfig();
+        
+        // 更新最大玩家数量
+        updateMaxPlayers();
+    }
+    
     // 创建icons文件夹
     private void createIconsFolder() {
         File iconsFolder = new File(getDataFolder(), "icons");
@@ -63,7 +71,7 @@ public class AMOTD extends JavaPlugin {
         }
     }
     
-    // 添加更新最大人数的方法，供重载配置时使用
+    // 添加或修改updateMaxPlayers方法
     public void updateMaxPlayers() {
         if (getConfig().getBoolean("player_count.enabled", false) && 
             getConfig().getBoolean("player_count.apply_limit", false)) {
@@ -71,5 +79,10 @@ public class AMOTD extends JavaPlugin {
             getServer().setMaxPlayers(maxPlayers);
             getLogger().info("已更新真实最大人数限制: " + maxPlayers);
         }
+    }
+    
+    // 添加getter方法
+    public MOTDListener getMotdListener() {
+        return motdListener;
     }
 } 

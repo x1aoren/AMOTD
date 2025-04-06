@@ -40,6 +40,11 @@ public class AMOTDCommand implements CommandExecutor, TabCompleter {
                 }
                 
                 plugin.reloadConfig();
+                
+                if (plugin.getMotdListener() != null) {
+                    plugin.getMotdListener().reloadServerIcons();
+                }
+                
                 plugin.updateMaxPlayers();
                 sender.sendMessage("§aAMOTD 配置已重新加载！");
                 return true;
