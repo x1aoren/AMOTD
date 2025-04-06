@@ -281,7 +281,9 @@ public class MOTDListener implements Listener {
         // 加载所有png文件
         File[] iconFiles = iconsFolder.listFiles((dir, name) -> name.toLowerCase().endsWith(".png"));
         if (iconFiles == null || iconFiles.length == 0) {
-            plugin.getLogger().info("没有找到图标文件");
+            if (plugin.getConfig().getBoolean("debug", false)) {
+                plugin.getLogger().info("没有找到图标文件");
+            }
             return;
         }
         
@@ -289,12 +291,16 @@ public class MOTDListener implements Listener {
             try {
                 org.bukkit.util.CachedServerIcon icon = plugin.getServer().loadServerIcon(iconFile);
                 serverIcons.add(icon);
-                plugin.getLogger().info("已加载图标: " + iconFile.getName());
+                if (plugin.getConfig().getBoolean("debug", false)) {
+                    plugin.getLogger().info("已加载图标: " + iconFile.getName());
+                }
             } catch (Exception e) {
                 plugin.getLogger().warning("加载图标时出错 " + iconFile.getName() + ": " + e.getMessage());
             }
         }
         
-        plugin.getLogger().info("成功加载了 " + serverIcons.size() + " 个服务器图标");
+        if (plugin.getConfig().getBoolean("debug", false)) {
+            plugin.getLogger().info("成功加载了 " + serverIcons.size() + " 个服务器图标");
+        }
     }
 } 

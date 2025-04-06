@@ -95,7 +95,9 @@ public class AMOTDVelocity {
         // 只重新加载图标，不重新保存配置
         if (motdListener != null) {
             motdListener.reloadServerIcons();
-            logger.info("服务器图标已重新加载");
+            if (configManager.getBoolean("debug", false)) {
+                logger.info("服务器图标已重新加载");
+            }
         }
     }
 } 

@@ -120,7 +120,9 @@ public class VelocityMOTDListener {
                     if (image != null) {
                         Favicon favicon = Favicon.create(image);
                         serverIcons.add(favicon);
-                        plugin.getLogger().info("已加载图标: " + iconPath.getFileName());
+                        if (plugin.getConfigManager().getBoolean("debug", false)) {
+                            plugin.getLogger().info("已加载图标: " + iconPath.getFileName());
+                        }
                     }
                 } catch (IOException e) {
                     plugin.getLogger().error("加载图标时出错 " + iconPath.getFileName() + ": " + e.getMessage());
@@ -130,7 +132,9 @@ public class VelocityMOTDListener {
             plugin.getLogger().error("读取图标目录时出错: " + e.getMessage());
         }
         
-        plugin.getLogger().info("成功加载了 " + serverIcons.size() + " 个服务器图标");
+        if (plugin.getConfigManager().getBoolean("debug", false)) {
+            plugin.getLogger().info("成功加载了 " + serverIcons.size() + " 个服务器图标");
+        }
     }
     
     public void reloadServerIcons() {

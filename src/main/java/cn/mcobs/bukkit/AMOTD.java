@@ -67,7 +67,9 @@ public class AMOTD extends JavaPlugin {
         File iconsFolder = new File(getDataFolder(), "icons");
         if (!iconsFolder.exists()) {
             iconsFolder.mkdirs();
-            getLogger().info("已创建icons文件夹");
+            if (getConfig().getBoolean("debug", false)) {
+                getLogger().info("已创建icons文件夹");
+            }
         }
     }
     
@@ -77,7 +79,9 @@ public class AMOTD extends JavaPlugin {
             getConfig().getBoolean("player_count.apply_limit", false)) {
             int maxPlayers = getConfig().getInt("player_count.max_players", 100);
             getServer().setMaxPlayers(maxPlayers);
-            getLogger().info("已更新真实最大人数限制: " + maxPlayers);
+            if (getConfig().getBoolean("debug", false)) {
+                getLogger().info("已更新真实最大人数限制: " + maxPlayers);
+            }
         }
     }
     
