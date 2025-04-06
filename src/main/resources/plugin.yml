@@ -1,6 +1,6 @@
 name: AMOTD
 version: 1.0
-main: cn.mcobs.AMOTD
+main: cn.mcobs.bukkit.AMOTD
 api-version: 1.16
 authors:
   - xiaoren
@@ -9,7 +9,7 @@ description: 一个简单的MOTD自定义插件
 commands:
   amotd:
     description: AMOTD插件命令
-    usage: /amotd <reload|get|set>
+    usage: /amotd <reload|get>
     permission: amotd.admin
 
 permissions:

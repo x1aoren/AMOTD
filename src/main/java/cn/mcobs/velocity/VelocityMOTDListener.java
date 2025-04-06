@@ -54,12 +54,13 @@ public class VelocityMOTDListener {
         // 处理MOTD文本
         Component motdComponent;
         if (useMinimessage) {
+            // 使用新的处理类解析MiniMessage格式
             String combinedText = line1 + "\n" + line2;
-            motdComponent = MiniMessage.miniMessage().deserialize(combinedText);
+            motdComponent = VelocityMiniMessageHandler.parse(combinedText);
         } else {
+            // 使用新的处理类解析传统格式
             String combinedText = line1 + "\n" + line2;
-            String coloredText = combinedText.replace('&', '§');
-            motdComponent = LegacyComponentSerializer.legacySection().deserialize(coloredText);
+            motdComponent = VelocityMiniMessageHandler.parseLegacy(combinedText);
         }
         
         // 设置MOTD
