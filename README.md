@@ -1,142 +1,169 @@
-# AMOTD - 高级MOTD插件
+# AMOTD - Advanced MOTD Plugin
 
-## 简介
+## Introduction
 
-AMOTD (Advanced MOTD) 是一个功能丰富的Minecraft服务器MOTD自定义插件，支持传统颜色代码和现代MiniMessage格式。通过AMOTD，您可以创建具有渐变色、彩虹色和多种高级格式的服务器介绍文本，自定义玩家列表显示，以及设置自定义服务器图标。
+AMOTD (Advanced MOTD) is a feature-rich Minecraft server MOTD customization plugin that supports both traditional color codes and modern MiniMessage format. With AMOTD, you can create server introduction texts with gradient colors, rainbow effects, and various advanced formatting options, customize player list display, and set custom server icons.
 
-主要特点：
-- 支持传统颜色代码(&a, &b等)和MiniMessage格式
-- 渐变色和彩虹色文本支持
-- 自定义玩家数量显示
-- 自定义玩家列表悬停文本
-- 多服务器图标随机切换
-- 支持从在线样式库获取预设样式
+Key features:
+- Support for traditional color codes (&a, &b, etc.) and MiniMessage format
+- Gradient color and rainbow text support
+- Custom player count display
+- Custom player list hover text
+- Multiple server icons with random rotation
+- Support for obtaining preset styles from online style library
 
-## 版本
+## Version
 
-- 支持的Minecraft版本：1.8.x - 1.21.x
-- 当前插件版本：1.0.0
+- Supported Minecraft versions: 1.8.x - 1.21.x
+- Current plugin version: 1.0.0
 
-## 兼容的服务端
+## Compatible Servers
 
-- Bukkit/Spigot/Paper - 完整支持，推荐使用Paper以获得最佳MiniMessage支持
-- Velocity - 完整支持所有功能
+- Bukkit/Spigot/Paper - Full support, recommended to use Paper for best MiniMessage support
+- Velocity - Full support for all features
 
-## 使用说明
+## Usage Instructions
 
-### 配置文件
+### Online MOTD Style Gallery
 
-插件配置文件位于 `plugins/AMOTD/config.yml`：
+The plugin supports obtaining preset MOTD styles from the official style library:
+
+1. Visit [MOTD Style Gallery](https://motd.mcobs.cn/) to browse available MOTD styles
+2. Each style has a unique style code, displayed on the style card
+3. Run the command `/amotd get <style code>` on your server to apply the style
+4. The style will be automatically downloaded and applied to your server, including:
+   - MOTD text content
+   - Format type (traditional or MiniMessage)
+   - Server icon (if available)
+
+Example:
+```bash
+/amotd get abc123
+```
+
+After applying a style, you can use the `/amotd reload` command to immediately refresh your server's MOTD.
+
+You can also create custom styles on the style gallery website, then apply them to your server using the style code.
+
+### Configuration File
+
+The plugin configuration file is located at `plugins/AMOTD/config.yml`:
 
 ```yaml
-# 消息格式: "legacy" 使用传统颜色代码, "minimessage" 使用现代格式
+# Message format: "legacy" uses traditional color codes, "minimessage" uses modern format
 message_format: "minimessage"
 
-# 传统格式配置
+# Traditional format configuration
 legacy:
-  line1: "&a欢迎来到我的&6Minecraft&a服务器"
-  line2: "&e享受游戏!"
+  line1: "&aWelcome to my &6Minecraft &aserver"
+  line2: "&eEnjoy your game!"
 
-# MiniMessage格式配置
+# MiniMessage format configuration
 minimessage:
-  line1: "<gradient:green:gold>欢迎来到我的Minecraft服务器</gradient>"
-  line2: "<yellow>享受游戏!</yellow>"
+  line1: "<gradient:green:gold>Welcome to my Minecraft server</gradient>"
+  line2: "<yellow>Enjoy your game!</yellow>"
 
-# 玩家数量设置
+# Player count settings
 player_count:
   enabled: true
   max_players: 100
   apply_limit: false
 
-# 玩家列表悬停文本
+# Player list hover text
 hover_player_list:
   enabled: true
-  empty_message: "目前没有玩家在线"
+  empty_message: "No players online at the moment"
 
-# 是否启用服务器图标
+# Whether to enable server icon
 enable_server_icon: true
 
-# 调试模式
+# Debug mode
 debug: false
 ```
 
-### 命令
+### Commands
 
-插件提供以下命令：
+The plugin provides the following commands:
 
-- `/amotd reload` - 重新加载配置文件和服务器图标
-- `/amotd get <样式码>` - 从在线样式库获取预设MOTD样式
+- `/amotd reload` - Reload the configuration file and server icons
+- `/amotd get <style code>` - Get preset MOTD styles from the online style library
 
-### 权限
+### Permissions
 
-- `amotd.command.reload` - 允许使用reload命令
-- `amotd.command.get` - 允许使用get命令获取样式
+- `amotd.command.reload` - Allow using the reload command
+- `amotd.command.get` - Allow using the get command to obtain styles
 
-### 服务器图标
+### Server Icons
 
-将64x64像素的PNG图片放入 `plugins/AMOTD/icons/` 文件夹中。如果有多个图片，每次服务器列表刷新时会随机选择一个显示。
+Place 64x64 pixel PNG images in the `plugins/AMOTD/icons/` folder. If there are multiple images, one will be randomly selected each time the server list is refreshed.
 
-## 构建方法
+## Build Method
 
-要从源码构建AMOTD插件，请按照以下步骤操作：
+To build the AMOTD plugin from source, follow these steps:
 
-1. 克隆仓库：
+1. Clone the repository:
    ```bash
    git clone https://github.com/x1aoren/AMOTD.git
    cd AMOTD
    ```
 
-2. 使用Maven构建：
+2. Build using Maven:
    ```bash
    mvn clean package
    ```
 
-3. 构建的JAR文件将位于 `target/` 目录中
+3. The built JAR file will be in the `target/` directory
 
-## 项目结构
+## Project Structure
 
 ```txt
 src/main/java/cn/mcobs/
-├── bukkit/ # Bukkit/Spigot实现
-│ ├── AMOTD.java # Bukkit插件主类
-│ ├── MOTDListener.java # 服务器列表请求监听器
-│ ├── AMOTDCommand.java # 命令处理器
-│ └── BukkitMiniMessageHandler.java # MiniMessage解析器
-├── velocity/ # Velocity实现
-│ ├── AMOTDVelocity.java # Velocity插件主类
-│ ├── VelocityMOTDListener.java # Ping事件监听器
-│ ├── VelocityMiniMessageHandler.java # MiniMessage解析器
-│ ├── VelocityCommandHandler.java # 命令处理器
-│ └── VelocityConfigManager.java # 配置管理器
-├── SimpleMiniMessage.java # 跨平台MiniMessage解析器
-├── MessageUtil.java # 消息工具类
-├── MOTDManager.java # MOTD管理器
-└── AdvancedMOTDManager.java # 高级MOTD管理功能
+├── bukkit/ # Bukkit/Spigot implementation
+│ ├── AMOTD.java # Bukkit plugin main class
+│ ├── MOTDListener.java # Server list request listener
+│ ├── AMOTDCommand.java # Command processor
+│ └── BukkitMiniMessageHandler.java # MiniMessage parser
+├── velocity/ # Velocity implementation
+│ ├── AMOTDVelocity.java # Velocity plugin main class
+│ ├── VelocityMOTDListener.java # Ping event listener
+│ ├── VelocityMiniMessageHandler.java # MiniMessage parser
+│ ├── VelocityCommandHandler.java # Command processor
+│ └── VelocityConfigManager.java # Configuration manager
+├── SimpleMiniMessage.java # Cross-platform MiniMessage parser
+├── MessageUtil.java # Message utility class
+├── MOTDManager.java # MOTD manager
+└── AdvancedMOTDManager.java # Advanced MOTD management features
 ```
 
+## Contribution Guidelines
 
-## 贡献指南
+We welcome all forms of contribution! If you want to contribute code, please follow these steps:
 
-我们欢迎所有形式的贡献！如果您想要贡献代码，请遵循以下步骤：
+1. Fork the repository and create your branch
+2. Write code, add new features or fix issues
+3. Ensure code style consistency
+4. Submit a Pull Request and describe your changes
 
-1. Fork仓库并创建您的分支
-2. 编写代码，添加新功能或修复问题
-3. 确保代码风格一致
-4. 提交Pull Request并描述您的更改
+### Coding Standards
 
-### 报告问题
+- Use standard Java code style
+- Add JavaDoc comments for new methods
+- All public APIs should be documented
+- Use meaningful commit messages
 
-如果您发现任何问题或有新功能建议，请使用GitHub Issues系统报告。请提供尽可能详细的信息，包括：
+### Reporting Issues
 
-- 问题的清晰描述
-- 重现步骤
-- 服务器版本和插件版本
-- 相关的错误日志或截图
+If you find any issues or have suggestions for new features, please use the GitHub Issues system to report them. Please provide as detailed information as possible, including:
 
-## 许可证
+- A clear description of the issue
+- Steps to reproduce
+- Server version and plugin version
+- Relevant error logs or screenshots
 
-本项目采用MIT许可证 - 详情请查看LICENSE文件
+## License
+
+This project uses the MIT License - see the LICENSE file for details
 
 ---
 
-感谢您使用AMOTD插件！如有任何问题，请在GitHub上联系我们。
+Thank you for using the AMOTD plugin! If you have any questions, please contact us on GitHub.

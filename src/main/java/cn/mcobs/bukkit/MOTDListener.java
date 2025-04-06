@@ -85,7 +85,10 @@ public class MOTDListener implements Listener {
                 // 使用反射清除玩家样本
                 clearPlayerSamples(event);
             } catch (Exception e) {
-                plugin.getLogger().warning("隐藏玩家列表失败: " + e.getMessage());
+                // 修改: 只在debug模式下输出警告
+                if (plugin.getConfig().getBoolean("debug", false)) {
+                    plugin.getLogger().warning("隐藏玩家列表失败: " + e.getMessage());
+                }
             }
         } else if (plugin.getServer().getOnlinePlayers().isEmpty()) {
             // 没有玩家在线时显示自定义消息
@@ -128,7 +131,10 @@ public class MOTDListener implements Listener {
                 // 使用直接的GameProfile方法
                 setCustomPlayerSample(event, emptyMessage);
             } catch (Exception e) {
-                plugin.getLogger().warning("设置自定义玩家列表消息失败: " + e.getMessage());
+                // 修改: 只在debug模式下输出警告
+                if (plugin.getConfig().getBoolean("debug", false)) {
+                    plugin.getLogger().warning("设置自定义玩家列表消息失败: " + e.getMessage());
+                }
             }
         }
         
