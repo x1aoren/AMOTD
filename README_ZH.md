@@ -1,5 +1,7 @@
 # AMOTD - 高级MOTD插件
 
+[English](README.md)
+
 ## 简介
 
 AMOTD (Advanced MOTD) 是一个功能丰富的Minecraft服务器MOTD自定义插件，支持传统颜色代码和现代MiniMessage格式。通过AMOTD，您可以创建具有渐变色、彩虹色和多种高级格式的服务器介绍文本，自定义玩家列表显示，以及设置自定义服务器图标。

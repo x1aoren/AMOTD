@@ -1,5 +1,7 @@
 # AMOTD - Advanced MOTD Plugin
 
+[中文文档](README_ZH.md)
+
 ## Introduction
 
 AMOTD (Advanced MOTD) is a feature-rich Minecraft server MOTD customization plugin that supports both traditional color codes and modern MiniMessage format. With AMOTD, you can create server introduction texts with gradient colors, rainbow effects, and various advanced formatting options, customize player list display, and set custom server icons.
