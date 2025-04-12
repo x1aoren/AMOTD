@@ -9,6 +9,9 @@
 # RGB color support: Requires Paper 1.16.5+ server
 # ==============================
 
+# Language setting (en, zh_cn)
+language: "en"
+
 # Message format type: legacy or minimessage
 # legacy: Uses traditional & color codes
 # minimessage: Uses MiniMessage format (requires Paper 1.16.5+ server)

@@ -2,7 +2,7 @@
   "id": "amotd",
   "name": "AMOTD",
   "version": "1.0",
-  "description": "高级MOTD插件，支持渐变颜色和MiniMessage格式",
+  "description": "Advanced MOTD plugin, supports gradient colors and MiniMessage format",
   "authors": ["xiaoren"],
   "main": "cn.mcobs.velocity.AMOTDVelocity",
   "dependencies": []

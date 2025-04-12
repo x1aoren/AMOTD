@@ -4,21 +4,21 @@ main: cn.mcobs.bukkit.AMOTD
 api-version: 1.16
 authors:
   - xiaoren
-description: 一个简单的MOTD自定义插件
+description: A simple MOTD customization plugin
 
 commands:
   amotd:
-    description: AMOTD插件命令
+    description: AMOTD plugin commands
     usage: /amotd <reload|get>
     permission: amotd.admin
 
 permissions:
   amotd.admin:
-    description: 允许使用 AMOTD 高级命令
+    description: Allows access to AMOTD advanced commands
     default: true
   amotd.command.reload:
-    description: 允许重载插件配置
+    description: Allows reloading the plugin configuration
     default: op
   amotd.command.get:
-    description: 允许获取预设MOTD样式
+    description: Allows getting preset MOTD styles
     default: op 

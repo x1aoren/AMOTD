@@ -140,4 +140,8 @@ public class VelocityMOTDListener {
     public void reloadServerIcons() {
         loadServerIcons();
     }
+
+    public int getIconsCount() {
+        return serverIcons.size();
+    }
 } 

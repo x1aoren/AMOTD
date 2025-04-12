@@ -4,6 +4,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
+import cn.mcobs.utils.LanguageManager;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -14,29 +15,39 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.json.JSONObject;
+import java.io.File;
 
 public class AMOTDCommand implements CommandExecutor, TabCompleter {
 
     private final AMOTD plugin;
+    private final LanguageManager lang;
     
     public AMOTDCommand(AMOTD plugin) {
         this.plugin = plugin;
+        this.lang = plugin.getLanguageManager();
     }
     
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0) {
-            sender.sendMessage("§6===== AMOTD 命令帮助 =====");
-            sender.sendMessage("§e/amotd reload §f- 重新加载配置");
-            sender.sendMessage("§e/amotd get <样式码> §f- 从网络获取MOTD样式");
+            sender.sendMessage("§6" + lang.getMessage("help_title"));
+            sender.sendMessage("§e" + lang.getMessage("help_reload"));
+            sender.sendMessage("§e" + lang.getMessage("help_get"));
             return true;
         }
         
         switch (args[0].toLowerCase()) {
             case "reload":
                 if (!sender.hasPermission("amotd.command.reload")) {
-                    sender.sendMessage("§c你没有权限执行此命令！");
+                    sender.sendMessage("§c" + lang.getMessage("no_permission"));
                     return true;
+                }
+                
+                // 检查配置文件是否存在，如果不存在则重新生成
+                File configFile = new File(plugin.getDataFolder(), "config.yml");
+                if (!configFile.exists()) {
+                    sender.sendMessage("§e" + lang.getMessage("config_not_found"));
+                    plugin.saveDefaultConfig();
                 }
                 
                 plugin.reloadConfig();
@@ -46,22 +57,22 @@ public class AMOTDCommand implements CommandExecutor, TabCompleter {
                 }
                 
                 plugin.updateMaxPlayers();
-                sender.sendMessage("§aAMOTD 配置已重新加载！");
+                sender.sendMessage("§a" + lang.getMessage("reload_success"));
                 return true;
                 
             case "get":
                 if (!sender.hasPermission("amotd.command.get")) {
-                    sender.sendMessage("§c你没有权限执行此命令！");
+                    sender.sendMessage("§c" + lang.getMessage("no_permission"));
                     return true;
                 }
                 
                 if (args.length < 2) {
-                    sender.sendMessage("§c用法: /amotd get <样式码>");
+                    sender.sendMessage("§c" + lang.getMessage("command_usage", "/amotd get <style code>"));
                     return true;
                 }
                 
                 String styleCode = args[1];
-                sender.sendMessage("§e正在获取MOTD样式 " + styleCode + "...");
+                sender.sendMessage("§e" + lang.getMessage("fetching_style", styleCode));
                 
                 // 在异步线程中获取MOTD
                 plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
@@ -107,26 +118,26 @@ public class AMOTDCommand implements CommandExecutor, TabCompleter {
                                 plugin.saveConfig();
                                 
                                 // 通知用户
-                                sender.sendMessage("§a获取到MOTD样式:");
-                                sender.sendMessage("§b类型: " + configType + " (已自动切换)");
-                                sender.sendMessage("§f第一行: " + line1);
-                                sender.sendMessage("§f第二行: " + line2);
+                                sender.sendMessage("§a" + lang.getMessage("style_fetch_success"));
+                                sender.sendMessage("§b" + lang.getMessage("format_type", configType));
+                                sender.sendMessage("§f" + lang.getMessage("line1", line1));
+                                sender.sendMessage("§f" + lang.getMessage("line2", line2));
                                 
                                 if (iconUrl != null && !iconUrl.isEmpty()) {
                                     // 下载图标...实现略
                                     sender.sendMessage("§6图标URL: " + iconUrl);
                                 }
                                 
-                                sender.sendMessage("§e配置已更新，使用 /amotd reload 应用更改");
+                                sender.sendMessage("§e" + lang.getMessage("config_updated"));
                             });
                         } else {
                             plugin.getServer().getScheduler().runTask(plugin, () -> {
-                                sender.sendMessage("§c获取MOTD失败，HTTP错误码: " + responseCode);
+                                sender.sendMessage("§c" + lang.getMessage("fetch_failed", "HTTP " + responseCode));
                             });
                         }
                     } catch (Exception e) {
                         plugin.getServer().getScheduler().runTask(plugin, () -> {
-                            sender.sendMessage("§c获取MOTD时出错: " + e.getMessage());
+                            sender.sendMessage("§c" + lang.getMessage("fetch_failed", e.getMessage()));
                         });
                     }
                 });
@@ -134,7 +145,7 @@ public class AMOTDCommand implements CommandExecutor, TabCompleter {
                 return true;
                 
             default:
-                sender.sendMessage("§c未知命令。使用 /amotd 查看帮助");
+                sender.sendMessage("§c" + lang.getMessage("unknown_command"));
                 return true;
         }
     }

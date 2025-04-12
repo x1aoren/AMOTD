@@ -12,6 +12,9 @@
 # RGB颜色支持: 需要Paper 1.16.5+服务器
 # ==============================
 
+# 语言设置 (en, zh_cn)
+language: "zh_cn"
+
 # 消息格式类型: legacy 或 minimessage
 # legacy: 使用传统的 & 颜色代码
 # minimessage: 使用MiniMessage格式 (需要Paper 1.16.5+服务器)

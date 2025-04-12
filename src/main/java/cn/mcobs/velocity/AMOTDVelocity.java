@@ -7,6 +7,7 @@ import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
 import org.slf4j.Logger;
+import cn.mcobs.utils.VelocityLanguageManager;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,8 +18,8 @@ import java.nio.file.Path;
 @Plugin(id = "amotd", 
         name = "AMOTD", 
         version = "1.0",
-        description = "高级MOTD插件，支持渐变颜色和MiniMessage格式",
-        authors = {"Your Name"})
+        description = "Advanced MOTD plugin, supports gradient colors and MiniMessage format",
+        authors = {"xiaoren"})
 public class AMOTDVelocity {
     
     private final ProxyServer server;
@@ -27,6 +28,7 @@ public class AMOTDVelocity {
     private File configFile;
     private VelocityConfigManager configManager;
     private VelocityMOTDListener motdListener;
+    private VelocityLanguageManager languageManager;
     
     @Inject
     public AMOTDVelocity(ProxyServer server, Logger logger, @DataDirectory Path dataDirectory) {
@@ -47,6 +49,13 @@ public class AMOTDVelocity {
             }
         }
         
+        // 加载配置
+        configManager = new VelocityConfigManager(this);
+        configManager.loadConfig();
+        
+        // 初始化语言管理器
+        languageManager = new VelocityLanguageManager(this);
+        
         // 生成中文配置文件
         saveChineseConfig();
         
@@ -60,10 +69,6 @@ public class AMOTDVelocity {
             }
         }
         
-        // 加载配置
-        configManager = new VelocityConfigManager(this);
-        configManager.loadConfig();
-        
         // 注册事件监听器
         motdListener = new VelocityMOTDListener(this);
         server.getEventManager().register(this, motdListener);
@@ -74,7 +79,7 @@ public class AMOTDVelocity {
             new VelocityCommandHandler(this)
         );
         
-        logger.info("AMOTD 插件已启用! (Velocity版本)");
+        logger.info(languageManager.getMessage("plugin_enable"));
     }
     
     private void saveChineseConfig() {
@@ -83,7 +88,7 @@ public class AMOTDVelocity {
             try (InputStream in = getClass().getClassLoader().getResourceAsStream("config_zh.yml")) {
                 if (in != null) {
                     Files.copy(in, chineseConfigPath);
-                    if (configManager != null && configManager.getBoolean("debug", false)) {
+                    if (configManager.getBoolean("debug", false)) {
                         logger.info("已生成中文配置文件 config_zh.yml");
                     }
                 }
@@ -109,14 +114,25 @@ public class AMOTDVelocity {
         return configManager;
     }
     
+    public VelocityLanguageManager getLanguageManager() {
+        return languageManager;
+    }
+    
     // 修改图标重载方法
     public void reloadServerIcons() {
         // 只重新加载图标，不重新保存配置
         if (motdListener != null) {
             motdListener.reloadServerIcons();
             if (configManager.getBoolean("debug", false)) {
-                logger.info("服务器图标已重新加载");
+                logger.info(languageManager.getMessage("icons_loaded", motdListener.getIconsCount()));
             }
         }
+    }
+    
+    // 重新加载配置和语言
+    public void reload() {
+        configManager.loadConfig();
+        String language = configManager.getString("language", "en");
+        languageManager.setLanguage(language);
     }
 } 
