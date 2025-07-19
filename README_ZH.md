@@ -116,6 +116,16 @@ debug: false
 
 3. 构建的JAR文件将位于 `target/` 目录中
 
+## 持续集成
+
+本项目使用GitHub Actions进行持续集成和部署：
+
+- **构建工作流**：对每次推送到main分支和拉取请求，自动在多个Java版本(8, 11, 17)上构建项目。
+- **发布工作流**：当推送标签（例如`v1.1.0`）时，自动创建新的发布版本。
+
+### 构建状态
+![Java CI with Maven](https://github.com/x1aoren/AMOTD/workflows/Java%20CI%20with%20Maven/badge.svg)
+
 ## 项目结构
 
 ```txt

@@ -116,6 +116,16 @@ To build the AMOTD plugin from source, follow these steps:
 
 3. The built JAR file will be in the `target/` directory
 
+## Continuous Integration
+
+This project uses GitHub Actions for continuous integration and deployment:
+
+- **Build Workflow**: Automatically builds the project on multiple Java versions (8, 11, 17) for every push to main branch and pull requests.
+- **Release Workflow**: Automatically creates a new release when a tag is pushed (e.g., `v1.1.0`).
+
+### Build Status
+![Java CI with Maven](https://github.com/x1aoren/AMOTD/workflows/Java%20CI%20with%20Maven/badge.svg)
+
 ## Project Structure
 
 ```txt
