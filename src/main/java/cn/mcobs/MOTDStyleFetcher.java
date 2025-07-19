@@ -63,17 +63,29 @@ public class MOTDStyleFetcher {
                 // 解析JSON
                 JSONObject jsonObject = new JSONObject(response.toString());
                 
-                // 直接从主对象获取字段，而不是从content子对象获取
-                String iconUrl = jsonObject.getString("icon");
-                String line1 = jsonObject.getString("line1");
-                String line2 = jsonObject.getString("line2");
-                
                 // 获取格式类型，默认为minecraft
                 String formatType = jsonObject.optString("type", "minecraft");
                 
+                // 获取图标URL
+                String iconUrl = jsonObject.optString("icon", "");
+                
+                // 从content子对象获取MOTD内容
+                JSONObject content = jsonObject.optJSONObject("content");
+                String line1, line2;
+                
+                if (content != null) {
+                    // 新格式：从content对象获取
+                    line1 = content.optString("line1", "");
+                    line2 = content.optString("line2", "");
+                } else {
+                    // 兼容旧格式：直接从主对象获取
+                    line1 = jsonObject.optString("line1", "");
+                    line2 = jsonObject.optString("line2", "");
+                }
+                
                 // 下载图标
                 boolean iconSuccess = false;
-                if (iconUrl != null && !iconUrl.isEmpty()) {
+                if (iconUrl != null && !iconUrl.isEmpty() && !iconUrl.equals("")) {
                     iconSuccess = downloadIcon(iconUrl);
                 }
                 
@@ -179,19 +191,19 @@ public class MOTDStyleFetcher {
                 
                 // 更新对应部分
                 if (inLegacySection && line.trim().startsWith("line1:") && "minecraft".equals(formatType)) {
-                    newLines.add("  line1: \"" + escapeYaml(line1) + "\"");
+                    newLines.add("  line1: " + escapeYaml(line1));
                     updatedLegacy1 = true;
                     continue;
                 } else if (inLegacySection && line.trim().startsWith("line2:") && "minecraft".equals(formatType)) {
-                    newLines.add("  line2: \"" + escapeYaml(line2) + "\"");
+                    newLines.add("  line2: " + escapeYaml(line2));
                     updatedLegacy2 = true;
                     continue;
                 } else if (inMinimessageSection && line.trim().startsWith("line1:") && "minimessage".equals(formatType)) {
-                    newLines.add("  line1: \"" + escapeYaml(line1) + "\"");
+                    newLines.add("  line1: " + escapeYaml(line1));
                     updatedMini1 = true;
                     continue;
                 } else if (inMinimessageSection && line.trim().startsWith("line2:") && "minimessage".equals(formatType)) {
-                    newLines.add("  line2: \"" + escapeYaml(line2) + "\"");
+                    newLines.add("  line2: " + escapeYaml(line2));
                     updatedMini2 = true;
                     continue;
                 }
@@ -205,10 +217,10 @@ public class MOTDStyleFetcher {
                 int legacyIndex = findIndexStartingWith(newLines, "legacy:");
                 if (legacyIndex >= 0) {
                     if (!updatedLegacy1) {
-                        newLines.add(legacyIndex + 1, "  line1: \"" + escapeYaml(line1) + "\"");
+                        newLines.add(legacyIndex + 1, "  line1: " + escapeYaml(line1));
                     }
                     if (!updatedLegacy2) {
-                        newLines.add(legacyIndex + 2, "  line2: \"" + escapeYaml(line2) + "\"");
+                        newLines.add(legacyIndex + 2, "  line2: " + escapeYaml(line2));
                     }
                 }
             }
@@ -217,10 +229,10 @@ public class MOTDStyleFetcher {
                 int miniIndex = findIndexStartingWith(newLines, "minimessage:");
                 if (miniIndex >= 0) {
                     if (!updatedMini1) {
-                        newLines.add(miniIndex + 1, "  line1: \"" + escapeYaml(line1) + "\"");
+                        newLines.add(miniIndex + 1, "  line1: " + escapeYaml(line1));
                     }
                     if (!updatedMini2) {
-                        newLines.add(miniIndex + 2, "  line2: \"" + escapeYaml(line2) + "\"");
+                        newLines.add(miniIndex + 2, "  line2: " + escapeYaml(line2));
                     }
                 }
             }
@@ -255,14 +267,50 @@ public class MOTDStyleFetcher {
     }
     
     /**
-     * 转义YAML特殊字符
+     * 转义YAML特殊字符，确保字符串保持引号
      */
     private String escapeYaml(String str) {
-        return str.replace("\\", "\\\\")
-                  .replace("\"", "\\\"")
-                  .replace("\n", "\\n")
-                  .replace("\r", "\\r")
-                  .replace("\t", "\\t");
+        if (str == null) {
+            return "";
+        }
+        
+        // 转义特殊字符
+        String escaped = str.replace("\\", "\\\\")
+                           .replace("\"", "\\\"")
+                           .replace("\n", "\\n")
+                           .replace("\r", "\\r")
+                           .replace("\t", "\\t");
+        
+        // 如果字符串包含特殊字符或为空，强制使用引号
+        if (escaped.isEmpty() || 
+            escaped.contains(":") || 
+            escaped.contains("#") || 
+            escaped.contains("[") || 
+            escaped.contains("]") || 
+            escaped.contains("{") || 
+            escaped.contains("}") || 
+            escaped.contains(",") || 
+            escaped.contains("&") || 
+            escaped.contains("*") || 
+            escaped.contains("!") || 
+            escaped.contains("|") || 
+            escaped.contains(">") || 
+            escaped.contains("'") || 
+            escaped.contains("\"") || 
+            escaped.contains("%") || 
+            escaped.contains("@") || 
+            escaped.contains("`") ||
+            escaped.matches("^[0-9]+$") || // 纯数字
+            escaped.matches("^(true|false|yes|no|on|off|null)$") || // 布尔值
+            escaped.startsWith(" ") || 
+            escaped.endsWith(" ") ||
+            escaped.contains("\n") ||
+            escaped.contains("\r") ||
+            escaped.contains("\t")) {
+            return "\"" + escaped + "\"";
+        }
+        
+        return escaped;
     }
     
     /**

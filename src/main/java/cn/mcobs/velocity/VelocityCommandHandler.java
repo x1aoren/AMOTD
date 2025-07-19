@@ -105,9 +105,21 @@ public class VelocityCommandHandler implements SimpleCommand {
                     // 解析JSON响应
                     JSONObject json = new JSONObject(response.toString());
                     String type = json.optString("type", "minecraft");  // 默认为minecraft类型
-                    String line1 = json.getString("line1");
-                    String line2 = json.getString("line2");
-                    String iconUrl = json.optString("icon", null);
+                    String iconUrl = json.optString("icon", "");
+                    
+                    // 从content子对象获取MOTD内容
+                    JSONObject content = json.optJSONObject("content");
+                    String line1, line2;
+                    
+                    if (content != null) {
+                        // 新格式：从content对象获取
+                        line1 = content.optString("line1", "");
+                        line2 = content.optString("line2", "");
+                    } else {
+                        // 兼容旧格式：直接从主对象获取
+                        line1 = json.optString("line1", "");
+                        line2 = json.optString("line2", "");
+                    }
                     
                     // 根据API返回的类型设置message_format
                     // 注意: API返回的"minecraft"类型对应配置中的"legacy"格式
@@ -134,7 +146,7 @@ public class VelocityCommandHandler implements SimpleCommand {
                     }
                     
                     // 如果有图标URL，尝试下载图标
-                    if (iconUrl != null && !iconUrl.isEmpty()) {
+                    if (iconUrl != null && !iconUrl.isEmpty() && !iconUrl.equals("")) {
                         try {
                             // 创建icons目录
                             Path iconsPath = plugin.getDataDirectory().resolve("icons");
@@ -160,7 +172,7 @@ public class VelocityCommandHandler implements SimpleCommand {
                                 source.sendMessage(Component.text("第一行: " + line1).color(NamedTextColor.WHITE));
                                 source.sendMessage(Component.text("第二行: " + line2).color(NamedTextColor.WHITE));
                                 
-                                if (iconUrl != null && !iconUrl.isEmpty()) {
+                                if (iconUrl != null && !iconUrl.isEmpty() && !iconUrl.equals("")) {
                                     source.sendMessage(Component.text("图标已下载到 icons/" + savedIconName).color(NamedTextColor.GOLD));
                                 }
                                 

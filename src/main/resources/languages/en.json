@@ -28,5 +28,5 @@
   "not_paper_warning": "Currently using MiniMessage format, but server is not Paper. Simple MiniMessage parser will be used, some advanced features may not be available.",
   "help_title": "===== AMOTD Command Help =====",
   "help_reload": "/amotd reload - Reload configuration and icons",
-  "help_get": "/amotd get <style code> - Get preset MOTD styles from network",
+  "help_get": "/amotd get <style code> - Get preset MOTD styles from network"
 } 

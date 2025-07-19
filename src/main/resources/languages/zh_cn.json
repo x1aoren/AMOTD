@@ -28,5 +28,5 @@
   "not_paper_warning": "当前使用MiniMessage格式，但服务器不是Paper。将使用简易MiniMessage解析器，部分高级功能可能不可用。",
   "help_title": "===== AMOTD 命令帮助 =====",
   "help_reload": "/amotd reload - 重新加载配置和图标",
-  "help_get": "/amotd get <样式码> - 从网络获取MOTD样式",
+  "help_get": "/amotd get <样式码> - 从网络获取MOTD样式"
 } 

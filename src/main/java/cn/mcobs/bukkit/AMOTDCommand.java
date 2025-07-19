@@ -96,9 +96,21 @@ public class AMOTDCommand implements CommandExecutor, TabCompleter {
                             // 解析JSON响应
                             JSONObject json = new JSONObject(response.toString());
                             String type = json.optString("type", "minecraft");
-                            String line1 = json.getString("line1");
-                            String line2 = json.getString("line2");
-                            String iconUrl = json.optString("icon", null);
+                            String iconUrl = json.optString("icon", "");
+                            
+                            // 从content子对象获取MOTD内容
+                            JSONObject content = json.optJSONObject("content");
+                            String line1, line2;
+                            
+                            if (content != null) {
+                                // 新格式：从content对象获取
+                                line1 = content.optString("line1", "");
+                                line2 = content.optString("line2", "");
+                            } else {
+                                // 兼容旧格式：直接从主对象获取
+                                line1 = json.optString("line1", "");
+                                line2 = json.optString("line2", "");
+                            }
                             
                             // 更新配置
                             String configType = "minecraft".equalsIgnoreCase(type) ? "legacy" : type;
