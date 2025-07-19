@@ -17,7 +17,7 @@ AMOTD (Advanced MOTD) 是一个功能丰富的Minecraft服务器MOTD自定义插
 ## 版本
 
 - 支持的Minecraft版本：1.8.x - 1.21.x
-- 当前插件版本：1.0.0
+- 当前插件版本：1.1.0
 
 ## 兼容的服务端
 

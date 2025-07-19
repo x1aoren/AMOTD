@@ -17,7 +17,7 @@ import java.nio.file.Path;
 
 @Plugin(id = "amotd", 
         name = "AMOTD", 
-        version = "1.0",
+        version = "1.1",
         description = "Advanced MOTD plugin, supports gradient colors and MiniMessage format",
         authors = {"xiaoren"})
 public class AMOTDVelocity {

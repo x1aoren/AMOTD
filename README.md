@@ -17,7 +17,7 @@ Key features:
 ## Version
 
 - Supported Minecraft versions: 1.8.x - 1.21.x
-- Current plugin version: 1.0.0
+- Current plugin version: 1.1.0
 
 ## Compatible Servers
 

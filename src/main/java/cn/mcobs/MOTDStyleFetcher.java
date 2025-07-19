@@ -276,10 +276,10 @@ public class MOTDStyleFetcher {
         
         // 转义特殊字符
         String escaped = str.replace("\\", "\\\\")
-                           .replace("\"", "\\\"")
-                           .replace("\n", "\\n")
-                           .replace("\r", "\\r")
-                           .replace("\t", "\\t");
+                  .replace("\"", "\\\"")
+                  .replace("\n", "\\n")
+                  .replace("\r", "\\r")
+                  .replace("\t", "\\t");
         
         // 如果字符串包含特殊字符或为空，强制使用引号
         if (escaped.isEmpty() || 
