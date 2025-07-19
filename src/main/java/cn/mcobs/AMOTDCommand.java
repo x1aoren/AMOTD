@@ -22,13 +22,11 @@ public class AMOTDCommand implements CommandExecutor, TabCompleter {
     private final AMOTD plugin;
     private final MOTDListener motdListener;
     private final MOTDStyleFetcher styleFetcher;
-    private final AdvancedMOTDManager motdManager;
     
     public AMOTDCommand(AMOTD plugin) {
         this.plugin = plugin;
         this.motdListener = plugin.getMotdListener();
         this.styleFetcher = new MOTDStyleFetcher(plugin);
-        this.motdManager = new AdvancedMOTDManager(plugin);
     }
     
     @Override
@@ -112,10 +110,17 @@ public class AMOTDCommand implements CommandExecutor, TabCompleter {
                             .append(Component.text(formatType).color(NamedTextColor.YELLOW));
                     MessageUtil.sendMessage(sender, typeMsg.toString(), null);
                     
-                    // 使用AdvancedMOTDManager处理MiniMessage格式
+                    // 处理MOTD格式
                     boolean isMinimessage = "minimessage".equalsIgnoreCase(formatType);
-                    String processedLine1 = motdManager.processMOTD(line1, isMinimessage);
-                    String processedLine2 = motdManager.processMOTD(line2, isMinimessage);
+                    String processedLine1, processedLine2;
+                    
+                    if (isMinimessage) {
+                        processedLine1 = SimpleMiniMessage.parseMiniMessage(line1);
+                        processedLine2 = SimpleMiniMessage.parseMiniMessage(line2);
+                    } else {
+                        processedLine1 = org.bukkit.ChatColor.translateAlternateColorCodes('&', line1);
+                        processedLine2 = org.bukkit.ChatColor.translateAlternateColorCodes('&', line2);
+                    }
                     
                     // 第一行信息
                     TextComponent line1Msg = Component.text("第一行: ").color(NamedTextColor.GREEN)

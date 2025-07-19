@@ -1,27 +1,27 @@
-package cn.mcobs.bukkit;
+package cn.mcobs.folia;
 
-import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.TabCompleter;
+import cn.mcobs.platform.PlatformManager;
 import cn.mcobs.utils.LanguageManager;
+import cn.mcobs.folia.MOTDListener;
+import cn.mcobs.folia.AMOTDCommand;
 
 import java.io.File;
+import java.lang.reflect.Method;
 
-public class AMOTD extends JavaPlugin {
+/**
+ * Folia平台的插件入口类
+ */
+public class FoliaPlugin extends JavaPlugin {
     
     private MOTDListener motdListener;
     private LanguageManager languageManager;
+    private PlatformManager platformManager;
     
     @Override
     public void onEnable() {
-        // 检测是否为Folia服务端
-        boolean isFolia = isFoliaServer();
-        if (isFolia) {
-            getLogger().info(languageManager != null ? 
-                languageManager.getMessage("folia_detected") : 
-                "检测到Folia服务端，将使用线程安全API");
-        }
+        // 创建平台管理器
+        platformManager = new PlatformManager(this);
         
         // 保存默认配置
         saveDefaultConfig();
@@ -57,48 +57,47 @@ public class AMOTD extends JavaPlugin {
         AMOTDCommand commandExecutor = new AMOTDCommand(this);
         
         // 注册命令和Tab补全器
-        getCommand("amotd").setExecutor(commandExecutor);
-        getCommand("amotd").setTabCompleter(commandExecutor);
+        try {
+            // 使用反射获取命令映射
+            Method getCommandMethod = getClass().getMethod("getCommand", String.class);
+            Object command = getCommandMethod.invoke(this, "amotd");
+            
+            // 设置执行器和Tab补全器
+            if (command != null) {
+                Method setExecutorMethod = command.getClass().getMethod("setExecutor", org.bukkit.command.CommandExecutor.class);
+                setExecutorMethod.invoke(command, commandExecutor);
+                
+                Method setTabCompleterMethod = command.getClass().getMethod("setTabCompleter", org.bukkit.command.TabCompleter.class);
+                setTabCompleterMethod.invoke(command, commandExecutor);
+            }
+        } catch (Exception e) {
+            getLogger().severe("无法注册命令: " + e.getMessage());
+        }
         
         // 如果启用了真实人数限制，应用最大人数设置
         if (getConfig().getBoolean("player_count.enabled", false) && 
             getConfig().getBoolean("player_count.apply_limit", false)) {
             int maxPlayers = getConfig().getInt("player_count.max_players", 100);
             
-            if (isFolia) {
-                // 使用反射调用Folia的线程安全API
-                try {
-                    // 获取全局区域调度器
-                    Class<?> serverClass = getServer().getClass();
-                    Object scheduler = serverClass.getMethod("getGlobalRegionScheduler").invoke(getServer());
-                    
-                    // 执行任务
-                    scheduler.getClass().getMethod("execute", JavaPlugin.class, Runnable.class)
-                            .invoke(scheduler, this, (Runnable) () -> {
-                                getServer().setMaxPlayers(maxPlayers);
-                                String message = (languageManager != null) ? 
-                                    languageManager.getMessage("max_players_updated", maxPlayers) : 
-                                    "已更新真实最大人数限制: " + maxPlayers;
-                                getLogger().info(message);
-                            });
-                } catch (Exception e) {
-                    getLogger().warning(languageManager != null ? 
-                        languageManager.getMessage("folia_api_error", e.getMessage()) : 
-                        "无法使用Folia API设置最大玩家数: " + e.getMessage());
-                    // 回退到传统方法
+            // 使用反射调用Folia的线程安全调度器设置最大玩家数
+            try {
+                // 获取全局区域调度器
+                Method getGlobalRegionSchedulerMethod = getServer().getClass().getMethod("getGlobalRegionScheduler");
+                Object scheduler = getGlobalRegionSchedulerMethod.invoke(getServer());
+                
+                // 执行任务
+                Method executeMethod = scheduler.getClass().getMethod("execute", JavaPlugin.class, Runnable.class);
+                executeMethod.invoke(scheduler, this, (Runnable) () -> {
                     getServer().setMaxPlayers(maxPlayers);
                     String message = (languageManager != null) ? 
                         languageManager.getMessage("max_players_updated", maxPlayers) : 
                         "已更新真实最大人数限制: " + maxPlayers;
                     getLogger().info(message);
-                }
-            } else {
-                // 传统方法
+                });
+            } catch (Exception e) {
+                getLogger().severe("无法设置最大玩家数: " + e.getMessage());
+                // 回退到传统方法
                 getServer().setMaxPlayers(maxPlayers);
-                String message = (languageManager != null) ? 
-                    languageManager.getMessage("max_players_updated", maxPlayers) : 
-                    "已更新真实最大人数限制: " + maxPlayers;
-                getLogger().info(message);
             }
         }
         
@@ -141,41 +140,29 @@ public class AMOTD extends JavaPlugin {
         }
     }
     
-    // 添加或修改updateMaxPlayers方法
+    // 添加或修改updateMaxPlayers方法，使用反射调用Folia的线程安全调度器
     public void updateMaxPlayers() {
         if (getConfig().getBoolean("player_count.enabled", false) && 
             getConfig().getBoolean("player_count.apply_limit", false)) {
             int maxPlayers = getConfig().getInt("player_count.max_players", 100);
             
-            boolean isFolia = isFoliaServer();
-            if (isFolia) {
-                // 使用反射调用Folia的线程安全API
-                try {
-                    // 获取全局区域调度器
-                    Class<?> serverClass = getServer().getClass();
-                    Object scheduler = serverClass.getMethod("getGlobalRegionScheduler").invoke(getServer());
-                    
-                    // 执行任务
-                    scheduler.getClass().getMethod("execute", JavaPlugin.class, Runnable.class)
-                            .invoke(scheduler, this, (Runnable) () -> {
-                                getServer().setMaxPlayers(maxPlayers);
-                                if (getConfig().getBoolean("debug", false)) {
-                                    getLogger().info(languageManager.getMessage("max_players_updated", maxPlayers));
-                                }
-                            });
-                    return;
-                } catch (Exception e) {
+            try {
+                // 获取全局区域调度器
+                Method getGlobalRegionSchedulerMethod = getServer().getClass().getMethod("getGlobalRegionScheduler");
+                Object scheduler = getGlobalRegionSchedulerMethod.invoke(getServer());
+                
+                // 执行任务
+                Method executeMethod = scheduler.getClass().getMethod("execute", JavaPlugin.class, Runnable.class);
+                executeMethod.invoke(scheduler, this, (Runnable) () -> {
+                    getServer().setMaxPlayers(maxPlayers);
                     if (getConfig().getBoolean("debug", false)) {
-                        getLogger().warning("无法使用Folia API设置最大玩家数: " + e.getMessage());
+                        getLogger().info(languageManager.getMessage("max_players_updated", maxPlayers));
                     }
-                    // 回退到传统方法
-                }
-            }
-            
-            // 传统方法
-            getServer().setMaxPlayers(maxPlayers);
-            if (getConfig().getBoolean("debug", false)) {
-                getLogger().info(languageManager.getMessage("max_players_updated", maxPlayers));
+                });
+            } catch (Exception e) {
+                getLogger().severe("无法设置最大玩家数: " + e.getMessage());
+                // 回退到传统方法
+                getServer().setMaxPlayers(maxPlayers);
             }
         }
     }
@@ -190,24 +177,15 @@ public class AMOTD extends JavaPlugin {
         return languageManager;
     }
     
+    // 获取平台管理器
+    public PlatformManager getPlatformManager() {
+        return platformManager;
+    }
+    
     private void saveChineseConfig() {
         File chineseConfigFile = new File(getDataFolder(), "config_zh.yml");
         if (!chineseConfigFile.exists()) {
             saveResource("config_zh.yml", false);
-        }
-    }
-    
-    /**
-     * 检测是否为Folia服务端
-     * @return 是否为Folia服务端
-     */
-    private boolean isFoliaServer() {
-        try {
-            // 尝试加载Folia特有的类
-            Class.forName("io.papermc.paper.threadedregions.RegionizedServer");
-            return true;
-        } catch (ClassNotFoundException e) {
-            return false;
         }
     }
 } 

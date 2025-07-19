@@ -1,6 +1,6 @@
 package cn.mcobs;
 
-import org.bukkit.Bukkit;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.json.JSONObject;
 
@@ -18,9 +18,9 @@ import java.util.logging.Level;
 
 public class MOTDStyleFetcher {
     
-    private final AMOTD plugin;
+    private final JavaPlugin plugin;
     
-    public MOTDStyleFetcher(AMOTD plugin) {
+    public MOTDStyleFetcher(JavaPlugin plugin) {
         this.plugin = plugin;
     }
     
@@ -31,86 +31,162 @@ public class MOTDStyleFetcher {
      */
     public boolean fetchStyle(String styleCode, Callback callback) {
         // 在异步线程中执行网络操作
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+        // 检测是否为Folia服务端
+        boolean isFolia = isFoliaServer();
+        
+        if (isFolia) {
             try {
-                // 构建API URL
-                String apiUrl = "https://motd.mcobs.cn/api/motd/" + styleCode;
-                
-                // 发送HTTP请求
-                URL url = new URL(apiUrl);
-                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                connection.setRequestMethod("GET");
-                connection.setRequestProperty("Accept", "application/json");
-                
-                // 检查响应码
-                int responseCode = connection.getResponseCode();
-                if (responseCode != 200) {
-                    Bukkit.getScheduler().runTask(plugin, () -> 
-                        callback.onFailure("API请求失败，响应码: " + responseCode));
-                    return;
-                }
-                
-                // 读取响应
-                BufferedReader reader = new BufferedReader(
-                        new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8));
-                StringBuilder response = new StringBuilder();
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    response.append(line);
-                }
-                reader.close();
-                
-                // 解析JSON
-                JSONObject jsonObject = new JSONObject(response.toString());
-                
-                // 获取格式类型，默认为minecraft
-                String formatType = jsonObject.optString("type", "minecraft");
-                
-                // 获取图标URL
-                String iconUrl = jsonObject.optString("icon", "");
-                
-                // 从content子对象获取MOTD内容
-                JSONObject content = jsonObject.optJSONObject("content");
-                String line1, line2;
-                
-                if (content != null) {
-                    // 新格式：从content对象获取
-                    line1 = content.optString("line1", "");
-                    line2 = content.optString("line2", "");
-                } else {
-                    // 兼容旧格式：直接从主对象获取
-                    line1 = jsonObject.optString("line1", "");
-                    line2 = jsonObject.optString("line2", "");
-                }
-                
-                // 下载图标
-                boolean iconSuccess = false;
-                if (iconUrl != null && !iconUrl.isEmpty() && !iconUrl.equals("")) {
-                    iconSuccess = downloadIcon(iconUrl);
-                }
-                
-                // 根据格式类型更新配置
-                boolean configSuccess = updateConfig(line1, line2, formatType);
-                
-                // 返回结果
-                final boolean finalIconSuccess = iconSuccess;
-                final String finalFormatType = formatType;
-                Bukkit.getScheduler().runTask(plugin, () -> {
-                    if (configSuccess) {
-                        callback.onSuccess(line1, line2, finalIconSuccess, finalFormatType);
-                    } else {
-                        callback.onFailure("配置更新失败");
+                // 使用反射获取异步调度器
+                try {
+                    Class<?> serverClass = plugin.getServer().getClass();
+                    Object asyncScheduler = serverClass.getMethod("getAsyncScheduler").invoke(plugin.getServer());
+                    asyncScheduler.getClass().getMethod("runNow", JavaPlugin.class, java.util.function.Consumer.class)
+                            .invoke(asyncScheduler, plugin, (java.util.function.Consumer<Object>) task -> {
+                    fetchStyleInternal(styleCode, callback);
+                            });
+                    } catch (Exception e) {
+                        plugin.getLogger().warning("无法使用Folia API执行异步任务: " + e.getMessage());
+                        // 回退到传统方法
+                        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+                            fetchStyleInternal(styleCode, callback);
+                        });
                     }
-                });
-                
+                    return true;
             } catch (Exception e) {
-                plugin.getLogger().log(Level.SEVERE, "获取MOTD样式时出错", e);
-                Bukkit.getScheduler().runTask(plugin, () -> 
-                    callback.onFailure("错误: " + e.getMessage()));
+                plugin.getLogger().warning("无法使用Folia API执行异步任务: " + e.getMessage());
+                // 回退到传统方法
             }
+        }
+        
+        // 传统方法
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+            fetchStyleInternal(styleCode, callback);
         });
         
         return true;
+    }
+    
+    /**
+     * 内部方法，实际执行获取MOTD样式的逻辑
+     */
+    private void fetchStyleInternal(String styleCode, Callback callback) {
+        try {
+            // 构建API URL
+            String apiUrl = "https://motd.mcobs.cn/api/motd/" + styleCode;
+            
+            // 发送HTTP请求
+            URL url = new URL(apiUrl);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setRequestProperty("Accept", "application/json");
+            
+            // 检查响应码
+            int responseCode = connection.getResponseCode();
+            if (responseCode != 200) {
+                runOnMainThread(() -> callback.onFailure("API请求失败，响应码: " + responseCode));
+                return;
+            }
+            
+            // 读取响应
+            BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8));
+            StringBuilder response = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                response.append(line);
+            }
+            reader.close();
+            
+            // 解析JSON
+            JSONObject jsonObject = new JSONObject(response.toString());
+            
+            // 获取格式类型，默认为minecraft
+            String formatType = jsonObject.optString("type", "minecraft");
+            
+            // 获取图标URL
+            String iconUrl = jsonObject.optString("icon", "");
+            
+            // 从content子对象获取MOTD内容
+            JSONObject content = jsonObject.optJSONObject("content");
+            String line1, line2;
+            
+            if (content != null) {
+                // 新格式：从content对象获取
+                line1 = content.optString("line1", "");
+                line2 = content.optString("line2", "");
+            } else {
+                // 兼容旧格式：直接从主对象获取
+                line1 = jsonObject.optString("line1", "");
+                line2 = jsonObject.optString("line2", "");
+            }
+            
+            // 下载图标
+            boolean iconSuccess = false;
+            if (iconUrl != null && !iconUrl.isEmpty() && !iconUrl.equals("")) {
+                iconSuccess = downloadIcon(iconUrl);
+            }
+            
+            // 根据格式类型更新配置
+            boolean configSuccess = updateConfig(line1, line2, formatType);
+            
+            // 返回结果
+            final boolean finalIconSuccess = iconSuccess;
+            final String finalFormatType = formatType;
+            runOnMainThread(() -> {
+                if (configSuccess) {
+                    callback.onSuccess(line1, line2, finalIconSuccess, finalFormatType);
+                } else {
+                    callback.onFailure("配置更新失败");
+                }
+            });
+            
+        } catch (Exception e) {
+            plugin.getLogger().log(Level.SEVERE, "获取MOTD样式时出错", e);
+            runOnMainThread(() -> callback.onFailure("错误: " + e.getMessage()));
+        }
+    }
+    
+    /**
+     * 在主线程上执行任务
+     */
+    private void runOnMainThread(Runnable task) {
+        boolean isFolia = isFoliaServer();
+        
+        if (isFolia) {
+            try {
+                // 使用反射调用Folia API
+                try {
+                    Class<?> serverClass = plugin.getServer().getClass();
+                    Object regionScheduler = serverClass.getMethod("getRegionScheduler").invoke(plugin.getServer());
+                    regionScheduler.getClass().getMethod("execute", JavaPlugin.class, Runnable.class)
+                            .invoke(regionScheduler, plugin, task);
+                } catch (Exception e) {
+                    plugin.getLogger().warning("无法使用Folia API执行主线程任务: " + e.getMessage());
+                    // 回退到传统方法
+                    plugin.getServer().getScheduler().runTask(plugin, task);
+                }
+            } catch (Exception e) {
+                plugin.getLogger().warning("无法使用Folia API执行主线程任务: " + e.getMessage());
+                // 回退到传统方法
+                plugin.getServer().getScheduler().runTask(plugin, task);
+            }
+        } else {
+            // 传统方法
+            plugin.getServer().getScheduler().runTask(plugin, task);
+        }
+    }
+    
+    /**
+     * 检测是否为Folia服务端
+     */
+    private boolean isFoliaServer() {
+        try {
+            // 尝试加载Folia特有的类
+            Class<?> foliaClass = Class.forName("io.papermc.paper.threadedregions.RegionizedServer");
+            return foliaClass != null;
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
     }
     
     /**
@@ -208,55 +284,52 @@ public class MOTDStyleFetcher {
                     continue;
                 }
                 
-                // 保留原行
+                // 保留其他行
                 newLines.add(line);
             }
             
-            // 如果没有找到对应的行，添加到合适的位置
-            if ("minecraft".equals(formatType) && (!updatedLegacy1 || !updatedLegacy2)) {
-                int legacyIndex = findIndexStartingWith(newLines, "legacy:");
-                if (legacyIndex >= 0) {
-                    if (!updatedLegacy1) {
-                        newLines.add(legacyIndex + 1, "  line1: " + escapeYaml(line1));
-                    }
-                    if (!updatedLegacy2) {
-                        newLines.add(legacyIndex + 2, "  line2: " + escapeYaml(line2));
-                    }
-                }
-            }
-            
-            if ("minimessage".equals(formatType) && (!updatedMini1 || !updatedMini2)) {
-                int miniIndex = findIndexStartingWith(newLines, "minimessage:");
-                if (miniIndex >= 0) {
-                    if (!updatedMini1) {
-                        newLines.add(miniIndex + 1, "  line1: " + escapeYaml(line1));
-                    }
-                    if (!updatedMini2) {
-                        newLines.add(miniIndex + 2, "  line2: " + escapeYaml(line2));
-                    }
-                }
-            }
-            
+            // 如果没有找到需要更新的行，添加到相应部分
             if (!updatedFormat) {
-                newLines.add("message_format: \"" + formatType + "\"");
+                int index = findIndexStartingWith(newLines, "legacy:");
+                if (index >= 0) {
+                    newLines.add(index, "message_format: \"" + formatType + "\"");
+                } else {
+                    newLines.add("message_format: \"" + formatType + "\"");
+                }
             }
             
-            // 写回配置文件
+            if ("minecraft".equals(formatType) && (!updatedLegacy1 || !updatedLegacy2)) {
+                int index = findIndexStartingWith(newLines, "legacy:");
+                if (index < 0) {
+                    newLines.add("legacy:");
+                    if (!updatedLegacy1) newLines.add("  line1: " + escapeYaml(line1));
+                    if (!updatedLegacy2) newLines.add("  line2: " + escapeYaml(line2));
+                } else {
+                    if (!updatedLegacy1) newLines.add(index + 1, "  line1: " + escapeYaml(line1));
+                    if (!updatedLegacy2) newLines.add(index + (updatedLegacy1 ? 2 : 1), "  line2: " + escapeYaml(line2));
+                }
+            } else if ("minimessage".equals(formatType) && (!updatedMini1 || !updatedMini2)) {
+                int index = findIndexStartingWith(newLines, "minimessage:");
+                if (index < 0) {
+                    newLines.add("minimessage:");
+                    if (!updatedMini1) newLines.add("  line1: " + escapeYaml(line1));
+                    if (!updatedMini2) newLines.add("  line2: " + escapeYaml(line2));
+                } else {
+                    if (!updatedMini1) newLines.add(index + 1, "  line1: " + escapeYaml(line1));
+                    if (!updatedMini2) newLines.add(index + (updatedMini1 ? 2 : 1), "  line2: " + escapeYaml(line2));
+                }
+            }
+            
+            // 写回文件
             Files.write(configFile.toPath(), newLines, StandardCharsets.UTF_8);
-            
-            // 重新加载配置
-            plugin.reloadConfig();
-            
             return true;
+            
         } catch (Exception e) {
-            plugin.getLogger().severe("更新配置文件时出错: " + e.getMessage());
+            plugin.getLogger().log(Level.SEVERE, "更新配置文件时出错", e);
             return false;
         }
     }
     
-    /**
-     * 在列表中查找以指定前缀开头的行的索引
-     */
     private int findIndexStartingWith(List<String> lines, String prefix) {
         for (int i = 0; i < lines.size(); i++) {
             if (lines.get(i).trim().startsWith(prefix)) {
@@ -266,56 +339,50 @@ public class MOTDStyleFetcher {
         return -1;
     }
     
-    /**
-     * 转义YAML特殊字符，确保字符串保持引号
-     */
     private String escapeYaml(String str) {
-        if (str == null) {
-            return "";
-        }
+        if (str == null) return "\"\"";
         
-        // 转义特殊字符
-        String escaped = str.replace("\\", "\\\\")
-                  .replace("\"", "\\\"")
-                  .replace("\n", "\\n")
-                  .replace("\r", "\\r")
-                  .replace("\t", "\\t");
+        // 如果是数字、布尔值或特殊字符，需要加引号
+        boolean needQuotes = str.isEmpty() || 
+                             str.matches("^[0-9]+$") || // 纯数字
+                             "true".equalsIgnoreCase(str) || 
+                             "false".equalsIgnoreCase(str) ||
+                             "yes".equalsIgnoreCase(str) ||
+                             "no".equalsIgnoreCase(str) ||
+                             "on".equalsIgnoreCase(str) ||
+                             "off".equalsIgnoreCase(str) ||
+                             str.contains(":") ||
+                             str.contains("#") ||
+                             str.contains("'") ||
+                             str.contains("\"") ||
+                             str.contains("{") ||
+                             str.contains("}") ||
+                             str.contains("[") ||
+                             str.contains("]") ||
+                             str.contains(",") ||
+                             str.contains("&") ||
+                             str.contains("*") ||
+                             str.contains("?") ||
+                             str.contains("|") ||
+                             str.contains(">") ||
+                             str.contains("<") ||
+                             str.contains("=") ||
+                             str.contains("!") ||
+                             str.contains("%") ||
+                             str.contains("@") ||
+                             str.contains("`") ||
+                             str.startsWith(" ") ||
+                             str.endsWith(" ");
         
-        // 如果字符串包含特殊字符或为空，强制使用引号
-        if (escaped.isEmpty() || 
-            escaped.contains(":") || 
-            escaped.contains("#") || 
-            escaped.contains("[") || 
-            escaped.contains("]") || 
-            escaped.contains("{") || 
-            escaped.contains("}") || 
-            escaped.contains(",") || 
-            escaped.contains("&") || 
-            escaped.contains("*") || 
-            escaped.contains("!") || 
-            escaped.contains("|") || 
-            escaped.contains(">") || 
-            escaped.contains("'") || 
-            escaped.contains("\"") || 
-            escaped.contains("%") || 
-            escaped.contains("@") || 
-            escaped.contains("`") ||
-            escaped.matches("^[0-9]+$") || // 纯数字
-            escaped.matches("^(true|false|yes|no|on|off|null)$") || // 布尔值
-            escaped.startsWith(" ") || 
-            escaped.endsWith(" ") ||
-            escaped.contains("\n") ||
-            escaped.contains("\r") ||
-            escaped.contains("\t")) {
+        if (needQuotes) {
+            // 转义双引号
+            String escaped = str.replace("\"", "\\\"");
             return "\"" + escaped + "\"";
+        } else {
+            return str;
         }
-        
-        return escaped;
     }
     
-    /**
-     * 回调接口
-     */
     public interface Callback {
         void onSuccess(String line1, String line2, boolean iconSuccess, String formatType);
         void onFailure(String errorMessage);

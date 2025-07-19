@@ -1,10 +1,10 @@
-package cn.mcobs.bukkit;
+package cn.mcobs.folia;
 
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.server.ServerListPingEvent;
+import org.bukkit.plugin.java.JavaPlugin;
 import cn.mcobs.SimpleMiniMessage;
-import cn.mcobs.bukkit.BukkitMiniMessageHandler;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -13,16 +13,15 @@ import java.util.UUID;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Constructor;
-import org.bukkit.plugin.java.JavaPlugin;
 
 public class MOTDListener implements Listener {
     
-    private final AMOTD plugin;
+    private final JavaPlugin plugin;
     
     private List<org.bukkit.util.CachedServerIcon> serverIcons = new ArrayList<>();
     private final Random random = new Random();
     
-    public MOTDListener(AMOTD plugin) {
+    public MOTDListener(JavaPlugin plugin) {
         this.plugin = plugin;
         this.reloadServerIcons(); // 初始化时加载图标
     }
@@ -41,33 +40,28 @@ public class MOTDListener implements Listener {
             line2 = plugin.getConfig().getString("minimessage.line2", "<yellow>默认的第二行MOTD</yellow>");
             
             // 使用处理类解析MiniMessage格式
-            line1 = BukkitMiniMessageHandler.parse(line1);
-            line2 = BukkitMiniMessageHandler.parse(line2);
+            line1 = parseMiniMessage(line1);
+            line2 = parseMiniMessage(line2);
         } else {
             // 从legacy部分获取配置
             line1 = plugin.getConfig().getString("legacy.line1", "&a默认的第一行MOTD");
             line2 = plugin.getConfig().getString("legacy.line2", "&e默认的第二行MOTD");
             
             // 使用处理类解析传统格式
-            line1 = BukkitMiniMessageHandler.parseLegacy(line1);
-            line2 = BukkitMiniMessageHandler.parseLegacy(line2);
+            line1 = parseLegacy(line1);
+            line2 = parseLegacy(line2);
         }
         
         // 设置MOTD
         event.setMotd(line1 + "\n" + line2);
         
-        // 修复1: 处理人数显示 - 从Velocity版本移植
+        // 处理人数显示
         if (plugin.getConfig().getBoolean("player_count.enabled", false)) {
             int maxPlayers = plugin.getConfig().getInt("player_count.max_players", 100);
             event.setMaxPlayers(maxPlayers);
-            
-            // 如果需要应用真实限制
-            if (plugin.getConfig().getBoolean("player_count.apply_limit", false)) {
-                plugin.getServer().setMaxPlayers(maxPlayers);
-            }
         }
         
-        // 修复处理玩家列表悬停文本
+        // 处理玩家列表悬停文本
         boolean enableHoverText = plugin.getConfig().getBoolean("hover_player_list.enabled", true);
         if (!enableHoverText) {
             try {
@@ -149,6 +143,24 @@ public class MOTDListener implements Listener {
                 plugin.getLogger().warning("设置服务器图标时出错: " + e.getMessage());
             }
         }
+    }
+
+    // 解析MiniMessage格式
+    private String parseMiniMessage(String text) {
+        try {
+            // 尝试使用Adventure API
+            net.kyori.adventure.text.Component component = 
+                net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(text);
+            return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(component);
+        } catch (Exception e) {
+            // 回退到简易解析器
+            return SimpleMiniMessage.parseMiniMessage(text);
+        }
+    }
+    
+    // 解析Legacy格式
+    private String parseLegacy(String text) {
+        return text.replace('&', '§');
     }
 
     // 新增辅助方法清除玩家样本
@@ -286,40 +298,55 @@ public class MOTDListener implements Listener {
             return;
         }
         
-        // 检测是否为Folia服务端
-        boolean isFolia = isFoliaServer();
-        
-        if (isFolia) {
-            // 使用反射调用Folia的线程安全API
-            try {
-                // 获取全局区域调度器
-                Class<?> serverClass = plugin.getServer().getClass();
-                Object scheduler = serverClass.getMethod("getGlobalRegionScheduler").invoke(plugin.getServer());
-                
-                // 执行任务
-                scheduler.getClass().getMethod("execute", JavaPlugin.class, Runnable.class)
-                        .invoke(scheduler, plugin, (Runnable) () -> {
-                            loadIconsSync();
-                        });
-                return;
-            } catch (Exception e) {
+        // 使用Folia的区域调度器异步加载图标
+        try {
+            // 使用反射调用Folia API
+            Class<?> serverClass = plugin.getServer().getClass();
+            Object regionScheduler = serverClass.getMethod("getRegionScheduler").invoke(plugin.getServer());
+            regionScheduler.getClass().getMethod("execute", JavaPlugin.class, Runnable.class)
+                    .invoke(regionScheduler, plugin, (Runnable) () -> {
+            // 加载所有png文件
+            File[] iconFiles = iconsFolder.listFiles((dir, name) -> name.toLowerCase().endsWith(".png"));
+            if (iconFiles == null || iconFiles.length == 0) {
                 if (plugin.getConfig().getBoolean("debug", false)) {
-                    plugin.getLogger().warning("无法使用Folia API加载图标: " + e.getMessage());
+                    plugin.getLogger().info("没有找到图标文件");
                 }
-                // 回退到传统方法
+                return;
             }
-        }
-        
-        // 传统方法
-        loadIconsSync();
+            
+            for (File iconFile : iconFiles) {
+                try {
+                    org.bukkit.util.CachedServerIcon icon = plugin.getServer().loadServerIcon(iconFile);
+                    serverIcons.add(icon);
+                    if (plugin.getConfig().getBoolean("debug", false)) {
+                        plugin.getLogger().info("已加载图标: " + iconFile.getName());
+                    }
+                } catch (Exception e) {
+                    plugin.getLogger().warning("加载图标时出错 " + iconFile.getName() + ": " + e.getMessage());
+                }
+            }
+            
+            if (plugin.getConfig().getBoolean("debug", false)) {
+                plugin.getLogger().info("成功加载了 " + serverIcons.size() + " 个服务器图标");
+            }
+                    });
+            } catch (Exception e) {
+                plugin.getLogger().warning("无法使用Folia API: " + e.getMessage());
+                // 回退到传统方法
+                loadIconsSync();
+            }
     }
     
     /**
-     * 同步加载图标
+     * 同步加载图标（回退方法）
      */
     private void loadIconsSync() {
         // 获取icons文件夹
         File iconsFolder = new File(plugin.getDataFolder(), "icons");
+        if (!iconsFolder.exists() || !iconsFolder.isDirectory()) {
+            plugin.getLogger().warning("图标文件夹不存在或不是文件夹");
+            return;
+        }
         
         // 加载所有png文件
         File[] iconFiles = iconsFolder.listFiles((dir, name) -> name.toLowerCase().endsWith(".png"));
@@ -344,20 +371,6 @@ public class MOTDListener implements Listener {
         
         if (plugin.getConfig().getBoolean("debug", false)) {
             plugin.getLogger().info("成功加载了 " + serverIcons.size() + " 个服务器图标");
-        }
-    }
-    
-    /**
-     * 检测是否为Folia服务端
-     * @return 是否为Folia服务端
-     */
-    private boolean isFoliaServer() {
-        try {
-            // 尝试加载Folia特有的类
-            Class.forName("io.papermc.paper.threadedregions.RegionizedServer");
-            return true;
-        } catch (ClassNotFoundException e) {
-            return false;
         }
     }
 } 

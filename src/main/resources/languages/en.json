@@ -26,6 +26,8 @@
   "set_icon_failed": "Error setting server icon: %s",
   "paper_detected": "Paper server detected, full MiniMessage format available.",
   "not_paper_warning": "Currently using MiniMessage format, but server is not Paper. Simple MiniMessage parser will be used, some advanced features may not be available.",
+  "folia_detected": "Folia server detected, thread-safe API will be used.",
+  "folia_api_error": "Failed to use Folia API: %s. Falling back to standard methods.",
   "help_title": "===== AMOTD Command Help =====",
   "help_reload": "/amotd reload - Reload configuration and icons",
   "help_get": "/amotd get <style code> - Get preset MOTD styles from network"

@@ -41,6 +41,10 @@
             <url>https://repo.papermc.io/repository/maven-public/</url>
         </repository>
         <repository>
+            <id>papermc-folia</id>
+            <url>https://repo.papermc.io/repository/maven-snapshots/</url>
+        </repository>
+        <repository>
             <id>velocity</id>
             <url>https://nexus.velocitypowered.com/repository/maven-public/</url>
         </repository>
@@ -51,6 +55,12 @@
             <groupId>io.papermc.paper</groupId>
             <artifactId>paper-api</artifactId>
             <version>1.19.4-R0.1-SNAPSHOT</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>dev.folia</groupId>
+            <artifactId>folia-api</artifactId>
+            <version>1.20.1-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

@@ -2,6 +2,7 @@ name: AMOTD
 version: 1.1
 main: cn.mcobs.bukkit.AMOTD
 api-version: 1.16
+folia-supported: true
 authors:
   - xiaoren
 description: A simple MOTD customization plugin

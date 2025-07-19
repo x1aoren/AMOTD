@@ -23,13 +23,11 @@ public class MOTDListener implements Listener {
     private final AMOTD plugin;
     private List<CachedServerIcon> serverIcons;
     private Random random;
-    private final AdvancedMOTDManager motdManager;
     
     public MOTDListener(AMOTD plugin) {
         this.plugin = plugin;
         this.serverIcons = new ArrayList<>();
         this.random = new Random();
-        this.motdManager = new AdvancedMOTDManager(plugin);
         // 加载服务器图标
         loadServerIcons();
     }
@@ -52,9 +50,14 @@ public class MOTDListener implements Listener {
             line2 = plugin.getConfig().getString("legacy.line2", "&e默认的第二行MOTD");
         }
         
-        // 使用新的管理器处理MOTD
-        line1 = motdManager.processMOTD(line1, useMinimessage);
-        line2 = motdManager.processMOTD(line2, useMinimessage);
+        // 处理MOTD
+        if (useMinimessage) {
+            line1 = SimpleMiniMessage.parseMiniMessage(line1);
+            line2 = SimpleMiniMessage.parseMiniMessage(line2);
+        } else {
+            line1 = ChatColor.translateAlternateColorCodes('&', line1);
+            line2 = ChatColor.translateAlternateColorCodes('&', line2);
+        }
         
         // 设置MOTD
         event.setMotd(line1 + "\n" + line2);

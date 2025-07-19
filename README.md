@@ -22,6 +22,7 @@ Key features:
 ## Compatible Servers
 
 - Bukkit/Spigot/Paper - Full support, recommended to use Paper for best MiniMessage support
+- Folia - Full support with thread-safe implementation, automatically detects and adapts to Folia's regionalized schedulers
 - Velocity - Full support for all features
 
 ## Usage Instructions

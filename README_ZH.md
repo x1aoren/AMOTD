@@ -22,6 +22,7 @@ AMOTD (Advanced MOTD) 是一个功能丰富的Minecraft服务器MOTD自定义插
 ## 兼容的服务端
 
 - Bukkit/Spigot/Paper - 完整支持，推荐使用Paper以获得最佳MiniMessage支持
+- Folia - 完整支持，使用线程安全实现，自动检测并适配Folia的区域化调度器
 - Velocity - 完整支持所有功能
 
 ## 使用说明
